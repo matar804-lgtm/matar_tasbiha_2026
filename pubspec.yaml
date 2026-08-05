@@ -10,6 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+    upgrader: ^10.3
   
   flutter_localizations:
     sdk: flutter
