@@ -1,0 +1,11 @@
+assets/
+  images/
+    bg_tasbih.jpg          # خلفية شاشة التسبيح
+    bg_quran.jpg           # خلفية شاشة القرآن
+    bg_qibla.jpg           # خلفية شاشة القبلة
+    bg_prayer.jpg          # خلفية شاشة المواقيت
+    bg_adhkar.jpg          # خلفية شاشة الأذكار
+    bg_duas.jpg            # خلفية شاشة الأدعية
+    bg_mafateh.jpg         # خلفية شاشة مفاتيح الفرج
+    bg_ruqyah.jpg          # خلفية شاشة الرقية
+    bg_mujarrabat.jpg      # خلفية شاشة المجربات

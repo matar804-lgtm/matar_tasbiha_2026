@@ -1,0 +1,46 @@
+name: matar_tasbiha_2026
+description: تطبيق تسبيحة - أذكار وأدعية واتجاه القبلة والقرآن الكريم
+
+publish_to: 'none'
+version: 1.1.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  flutter_localizations:
+    sdk: flutter
+  
+  intl: ^0.20.2
+  adhan: ^2.0.0+1
+  cupertino_icons: ^1.0.2
+  shared_preferences: ^2.2.2
+  quran: ^1.2.2
+  geolocator: ^10.1.0
+  flutter_compass: ^0.8.1 
+  google_fonts: ^6.1.0
+  flutter_local_notifications: ^17.2.4
+  timezone: ^0.9.4
+  permission_handler: ^11.4.0
+  url_launcher: ^6.2.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+  
+  fonts:
+    - family: Amiri
+      fonts:
+        - asset: assets/fonts/Amiri-Regular.ttf
+        - asset: assets/fonts/Amiri-Bold.ttf
+          weight: 700
