@@ -1,74 +1,62 @@
-import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class BookmarkManager {
   static const String _bookmarksKey = 'quran_bookmarks';
-  static const int maxBookmarks = 10;
 
-  /// إنشاء علامة مرجعية جديدة
-  static Map<String, dynamic> createBookmark({
+  static Future<void> addBookmark({
+    required String surahName,
     required int surahNumber,
     required int ayahNumber,
-    required String surahName,
-  }) {
-    return {
+    required String ayahText,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final bookmarks = _getBookmarksList(prefs);
+
+    final bookmark = {
+      'surahName': surahName,
       'surahNumber': surahNumber,
       'ayahNumber': ayahNumber,
-      'surahName': surahName,
-      'timestamp': DateTime.now().toIso8601String(),
+      'ayahText': ayahText,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
     };
-  }
 
-  /// حفظ علامة مرجعية (بحد أقصى 10)
-  static Future<bool> addBookmark(Map<String, dynamic> bookmark) async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String> bookmarksJson = prefs.getStringList(_bookmarksKey) ?? [];
+    final exists = bookmarks.any((b) =>
+        b['surahNumber'] == surahNumber && b['ayahNumber'] == ayahNumber);
 
-    if (bookmarksJson.length >= maxBookmarks) {
-      return false;
+    if (!exists) {
+      bookmarks.add(bookmark);
+      await prefs.setString(_bookmarksKey, jsonEncode(bookmarks));
     }
-
-    final exists = bookmarksJson.any((element) {
-      final data = jsonDecode(element) as Map<String, dynamic>;
-      return data['surahNumber'] == bookmark['surahNumber'] &&
-          data['ayahNumber'] == bookmark['ayahNumber'];
-    });
-
-    if (exists) return false;
-
-    bookmarksJson.add(jsonEncode(bookmark));
-    await prefs.setStringList(_bookmarksKey, bookmarksJson);
-    return true;
   }
 
-  /// استرجاع جميع العلامات المرجعية
   static Future<List<Map<String, dynamic>>> getBookmarks() async {
     final prefs = await SharedPreferences.getInstance();
-    List<String> bookmarksJson = prefs.getStringList(_bookmarksKey) ?? [];
-
-    return bookmarksJson.map((e) {
-      return jsonDecode(e) as Map<String, dynamic>;
-    }).toList();
+    return _getBookmarksList(prefs);
   }
 
-  /// حذف علامة مرجعية
-  static Future<void> removeBookmark(int surahNumber, int ayahNumber) async {
+  static Future<void> removeBookmark({
+    required int surahNumber,
+    required int ayahNumber,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
-    List<String> bookmarksJson = prefs.getStringList(_bookmarksKey) ?? [];
+    final bookmarks = _getBookmarksList(prefs);
 
-    bookmarksJson.removeWhere((element) {
-      final data = jsonDecode(element) as Map<String, dynamic>;
-      return data['surahNumber'] == surahNumber &&
-          data['ayahNumber'] == ayahNumber;
-    });
+    bookmarks.removeWhere((b) =>
+        b['surahNumber'] == surahNumber && b['ayahNumber'] == ayahNumber);
 
-    await prefs.setStringList(_bookmarksKey, bookmarksJson);
+    await prefs.setString(_bookmarksKey, jsonEncode(bookmarks));
   }
 
-  /// تنسيق التاريخ والوقت للعرض
-  static String formatDateTime(String isoString) {
-    final date = DateTime.parse(isoString);
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} '
-        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  static List<Map<String, dynamic>> _getBookmarksList(SharedPreferences prefs) {
+    final bookmarksString = prefs.getString(_bookmarksKey);
+    if (bookmarksString == null || bookmarksString.isEmpty) return [];
+
+    try {
+      final List<dynamic> decoded = jsonDecode(bookmarksString);
+      return decoded.cast<Map<String, dynamic>>();
+    } catch (e) {
+      return [];
+    }
   }
 }

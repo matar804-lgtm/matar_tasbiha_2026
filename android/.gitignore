@@ -12,3 +12,5 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+# ✅ منع رفع ملف Firebase السري إلى GitHub
+**/google-services.json

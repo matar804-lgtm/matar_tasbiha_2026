@@ -1,203 +1,227 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../data/duas_data.dart';
 import 'dua_detail_screen.dart';
 
-class DuasScreen extends StatefulWidget {
+class DuasScreen extends StatelessWidget {
   const DuasScreen({Key? key}) : super(key: key);
-
-  @override
-  State<DuasScreen> createState() => _DuasScreenState();
-}
-
-class _DuasScreenState extends State<DuasScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  static const Color cardColor = Color(0xFF1B5E20);
-  static const Color accentColor = Color(0xFFD4AF37);
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    )..forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F2027),
+      backgroundColor: const Color(0xFF0A201A),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1B5E20),
+        backgroundColor: const Color(0xFF1B342B),
+        elevation: 0,
         title: const Text(
-          'الأدعية',
+          'الأدعية المأثورة',
           style: TextStyle(
             fontFamily: 'Amiri',
-            fontSize: 24,
-            color: Color(0xFFD4AF37),
+            color: Color(0xFFC9B896),
+            fontSize: 22,
             fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFFD4AF37)),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFFC9B896)),
           onPressed: () => Navigator.pop(context),
         ),
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0F2027),
-              Color(0xFF203A43),
-              Color(0xFF2C5364),
-            ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(40),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(
+              'موسوعة شاملة للأدعية من القرآن والسنة',
+              style: TextStyle(
+                fontFamily: 'Amiri',
+                color: Colors.white.withValues(alpha: 0.7),
+                fontSize: 12,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ),
         ),
-        child: FadeTransition(
-          opacity: _controller,
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            // ✅ التصحيح: استخدام duasCategories
-            itemCount: duasCategories.length,
-            itemBuilder: (context, index) {
-              // ✅ التصحيح: استخدام المتغير الصحيح
-              final category = duasCategories[index];
-              final duas = category['items'] as List<Map<String, dynamic>>;
-
-              return FadeTransition(
-                opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
-                  CurvedAnimation(
-                    parent: _controller,
-                    curve: Interval(
-                      (index * 0.1).clamp(0.0, 0.6),
-                      ((index * 0.1) + 0.4).clamp(0.0, 1.0),
-                      curve: Curves.easeOut,
-                    ),
-                  ),
-                ),
-                child: Transform.translate(
-                  offset: Offset(0, (1 - _controller.value) * 30),
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    child: GestureDetector(
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => DuaDetailScreen(
-                              // ✅ التصحيح: استخدام 'category'
-                              title: category['category'] as String,
-                              duas: duas,
-                              categoryIndex: index,
-                              color: cardColor,
-                            ),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              cardColor.withOpacity(0.85),
-                              cardColor.withOpacity(0.65),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: accentColor.withOpacity(0.6),
-                            width: 2,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: cardColor.withOpacity(0.4),
-                              blurRadius: 15,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [accentColor, Color(0xFFB8860B)],
-                                ),
-                                borderRadius: BorderRadius.circular(15),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: accentColor.withOpacity(0.4),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: Center(
-                                child: Text(
-                                  category['icon'] as String,
-                                  style: const TextStyle(fontSize: 30),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    category['category']
-                                        as String, // ✅ التصحيح هنا
-                                    style: const TextStyle(
-                                      fontFamily: 'Amiri',
-                                      fontSize: 20,
-                                      color: accentColor,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${duas.length} دعاء',
-                                    style: const TextStyle(
-                                      fontFamily: 'Amiri',
-                                      fontSize: 14,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Icon(
-                              Icons.arrow_forward_ios,
-                              color: accentColor.withOpacity(0.8),
-                              size: 18,
-                            ),
-                          ],
-                        ),
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: allDuasCategories.length,
+        itemBuilder: (context, index) {
+          final category = allDuasCategories[index];
+          return Card(
+            color: const Color(0xFF132A22),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: Color(0xFFC9B896), width: 1),
+            ),
+            margin: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ===== عنوان الفئة =====
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1B342B),
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(20)),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: const Color(0xFFC9B896).withValues(alpha: 0.3),
+                        width: 1,
                       ),
                     ),
                   ),
+                  child: Row(
+                    children: [
+                      Text(
+                        category.icon,
+                        style: const TextStyle(fontSize: 28),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          category.name,
+                          style: const TextStyle(
+                            fontFamily: 'Amiri',
+                            color: Color(0xFFF0E0B5),
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color:
+                              const Color(0xFFC9B896).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '${category.duas.length}',
+                          style: const TextStyle(
+                            fontFamily: 'Amiri',
+                            color: Color(0xFFC9B896),
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              );
-            },
-          ),
-        ),
+                // ===== قائمة الأدعية =====
+                ...category.duas.map((dua) {
+                  return InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => DuaDetailScreen(
+                            title: dua.title,
+                            content: dua.arabic,
+                            virtue: dua.virtue,
+                            repeatCount: dua.repeatCount,
+                            source: dua.source,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color:
+                                const Color(0xFFC9B896).withValues(alpha: 0.1),
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFC9B896)
+                                  .withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.menu_book_rounded,
+                              color: Color(0xFFC9B896),
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  dua.title,
+                                  style: const TextStyle(
+                                    fontFamily: 'Amiri',
+                                    color: Color(0xFFF0E0B5),
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.repeat_rounded,
+                                      color: const Color(0xFFD4AF37),
+                                      size: 14,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'التكرار: ${dua.repeatCount}',
+                                      style: const TextStyle(
+                                        fontFamily: 'Amiri',
+                                        color: Color(0xFFD4AF37),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Icon(
+                                      Icons.info_outline_rounded,
+                                      color: const Color(0xFF9AB09F),
+                                      size: 14,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        dua.source,
+                                        style: const TextStyle(
+                                          fontFamily: 'Amiri',
+                                          color: Color(0xFF9AB09F),
+                                          fontSize: 12,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_forward_ios,
+                            color: Color(0xFFC9B896),
+                            size: 16,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

@@ -1,6 +1,6 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/gestures.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:quran/quran.dart' as quran;
 import 'dart:convert';
@@ -92,7 +92,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           content: Row(children: [
             const Icon(Icons.bookmark, color: Colors.amber, size: 24),
             const SizedBox(width: 10),
-            Text('تم حفظ الإشارة المرجعية',
+            Text('تم حفظ الإشارة المرجعية للآية $ayah',
                 style: TextStyle(fontFamily: _fontFamily, fontSize: 16))
           ]),
           backgroundColor: const Color(0xFF009688),
@@ -105,7 +105,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
-  // ✅ دالة تحويل أرقام آمنة ودقيقة
   String _toArabicNumber(dynamic input) {
     const englishToArabic = {
       '0': '٠',
@@ -119,12 +118,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       '8': '٨',
       '9': '٩',
     };
-
     String text = input.toString();
     englishToArabic.forEach((en, ar) {
       text = text.replaceAll(en, ar);
     });
-
     return text;
   }
 
@@ -235,12 +232,11 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   }
                 }),
             Center(
-              child: Text('${_fontSize.toInt()}',
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold)),
-            ),
+                child: Text('${_fontSize.toInt()}',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold))),
             IconButton(
                 icon: const Icon(Icons.add, color: Colors.white),
                 onPressed: () {
@@ -315,20 +311,17 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                   controller: _scrollController,
                   child: Column(
                     children: [
-                      GestureDetector(
-                        onLongPress: () =>
-                            _addBookmark(widget.surahNumber, _currentAyah),
-                        child: Text.rich(
-                          TextSpan(children: _buildAyahSpans()),
-                          style: TextStyle(
-                              fontFamily: _fontFamily,
-                              fontSize: _fontSize,
-                              color: Colors.black87,
-                              height: 2.3,
-                              fontWeight: FontWeight.w600),
-                          textAlign: TextAlign.justify,
-                          textDirection: TextDirection.rtl,
+                      Text.rich(
+                        TextSpan(children: _buildAyahSpans()),
+                        style: TextStyle(
+                          fontFamily: _fontFamily,
+                          fontSize: _fontSize,
+                          color: Colors.black87,
+                          height: 2.3,
+                          fontWeight: FontWeight.w600,
                         ),
+                        textAlign: TextAlign.justify,
+                        textDirection: TextDirection.rtl,
                       ),
                       const SizedBox(height: 30),
                     ],
@@ -370,6 +363,15 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                     )
                   else
                     const SizedBox(width: 100),
+                  // ✅ زر حفظ الإشارة للآية الحالية
+                  IconButton(
+                    icon: const Icon(Icons.bookmark_add,
+                        color: Colors.amber, size: 28),
+                    onPressed: () =>
+                        _addBookmark(widget.surahNumber, _currentAyah),
+                    tooltip:
+                        'حفظ الإشارة للآية ${_toArabicNumber(_currentAyah)}',
+                  ),
                   Text(
                       '${_toArabicNumber(_currentAyah)} / ${_toArabicNumber(_verseCount)}',
                       style: TextStyle(
@@ -411,19 +413,15 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     );
   }
 
-  // ✅ بناء الآيات: كل سورة تبدأ من 1 بشكل مستقل تماماً
+  // ✅✅✅ الحل السحري: TextSpan للشكل الجميل + LongPressGestureRecognizer للحفظ ✅✅✅
   List<InlineSpan> _buildAyahSpans() {
     List<InlineSpan> spans = [];
     for (int i = 1; i <= _verseCount; i++) {
       final verseText = quran.getVerse(widget.surahNumber, i);
-
-      // ✅ الحل الجذري: نمرر رقم الآية المحلي (i) مباشرة للدالة
-      // هذا يضمن أن الرمز الزخرفي سيظهر دائماً بداية من ١ حتى نهاية السورة
       final String verseSymbol = quran.getVerseEndSymbol(i);
-
       final isCurrent = _currentAyah == i;
 
-      // 1. نص الآية
+      // 1. نص الآية مع الضغط المطول للحفظ
       spans.add(TextSpan(
         text: '$verseText ',
         style: TextStyle(
@@ -433,14 +431,15 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           backgroundColor:
               isCurrent ? Colors.amber.withOpacity(0.3) : Colors.transparent,
         ),
-        recognizer: TapGestureRecognizer()
-          ..onTap = () {
+        recognizer: LongPressGestureRecognizer()
+          ..onLongPress = () {
             setState(() => _currentAyah = i);
-            HapticFeedback.lightImpact();
+            _addBookmark(widget.surahNumber, i);
+            HapticFeedback.mediumImpact();
           },
       ));
 
-      // 2. رمز نهاية الآية المدمج مع الرقم المحلي الصحيح
+      // 2. رمز نهاية الآية مع الضغط المطول للحفظ
       spans.add(TextSpan(
         text: '$verseSymbol ',
         style: TextStyle(
@@ -449,10 +448,11 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           color: isCurrent ? Colors.amber[900] : const Color(0xFF009688),
           fontWeight: FontWeight.bold,
         ),
-        recognizer: TapGestureRecognizer()
-          ..onTap = () {
+        recognizer: LongPressGestureRecognizer()
+          ..onLongPress = () {
             setState(() => _currentAyah = i);
-            HapticFeedback.lightImpact();
+            _addBookmark(widget.surahNumber, i);
+            HapticFeedback.mediumImpact();
           },
       ));
     }

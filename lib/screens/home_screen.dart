@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' as math;
 import 'dart:async';
 import 'library_screen.dart';
+import '../utils/app_helpers.dart'; // ✅ استيراد ملف المساعدة
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -59,14 +60,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         vsync: this, duration: const Duration(milliseconds: 150));
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
         CurvedAnimation(parent: _pulseController, curve: Curves.easeOut));
-
     _arcController = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 300));
-
     _rippleController = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 600));
     _rippleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(parent: _rippleController, curve: Curves.easeOut));
+
+    // ✅ طلب التقييم تلقائياً بعد 10 استخدامات (يعمل بذكاء ولا يزعج المستخدم)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AppHelpers.requestReviewIfNeeded(context);
+    });
   }
 
   @override
@@ -127,11 +131,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       _count++;
       _totalCount++;
       _dailyCount++;
-
       if (_count >= _target) {
         _currentDhikrIndex = (_currentDhikrIndex + 1) % _adhkar.length;
         _currentDhikr = _adhkar[_currentDhikrIndex];
-
         if (_totalCount % _target == 0) {
           _showCompletionMessage = true;
           _completionTimer?.cancel();
@@ -142,23 +144,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _count = 0;
       }
     });
-
     _saveCount();
-
     _pulseController.forward().then((_) => _pulseController.reverse());
     _arcController.forward().then((_) => _arcController.reverse());
-
     if (_showRippleEffect) {
       _rippleController.forward().then((_) => _rippleController.reset());
     }
-
     if (_showStarsEffect) {
       setState(() => _showStars = true);
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted) setState(() => _showStars = false);
       });
     }
-
     if (_showHaptic) HapticFeedback.lightImpact();
   }
 
@@ -198,7 +195,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.3), // ✅ تم الإصلاح
+                    color: Colors.white.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 20),
             const Text('خيارات التصفير',
@@ -212,8 +209,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               leading: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                      color: const Color(0xFFD4AF37)
-                          .withValues(alpha: 0.2), // ✅ تم الإصلاح
+                      color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(10)),
                   child: const Icon(Icons.refresh,
                       color: Color(0xFFD4AF37), size: 24)),
@@ -225,8 +221,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   style: TextStyle(
                       fontFamily: 'Amiri',
                       fontSize: 12,
-                      color:
-                          Colors.white.withValues(alpha: 0.7))), // ✅ تم الإصلاح
+                      color: Colors.white.withValues(alpha: 0.7))),
               onTap: () {
                 Navigator.pop(context);
                 _resetCount();
@@ -237,8 +232,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               leading: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                      color: const Color(0xFFE8837C)
-                          .withValues(alpha: 0.2), // ✅ تم الإصلاح
+                      color: const Color(0xFFE8837C).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(10)),
                   child: const Icon(Icons.delete_sweep,
                       color: Color(0xFFE8837C), size: 24)),
@@ -271,27 +265,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             style: TextStyle(
                 fontFamily: 'Amiri', color: Color(0xFFD4AF37), fontSize: 22)),
         content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [33, 99, 100, 500, 1000].map((target) {
-              return ListTile(
-                title: Text('$target مرة',
-                    style: const TextStyle(
-                        fontFamily: 'Amiri',
-                        color: Colors.white,
-                        fontSize: 18)),
-                trailing: target == _target
-                    ? const Icon(Icons.check, color: Color(0xFFD4AF37))
-                    : null,
-                onTap: () {
-                  setState(() {
-                    _target = target;
-                    _showCompletionMessage = false;
-                  });
-                  _saveCount();
-                  Navigator.pop(context);
-                },
-              );
-            }).toList()),
+          mainAxisSize: MainAxisSize.min,
+          children: [33, 99, 100, 500, 1000].map((target) {
+            return ListTile(
+              title: Text('$target مرة',
+                  style: const TextStyle(
+                      fontFamily: 'Amiri', color: Colors.white, fontSize: 18)),
+              trailing: target == _target
+                  ? const Icon(Icons.check, color: Color(0xFFD4AF37))
+                  : null,
+              onTap: () {
+                setState(() {
+                  _target = target;
+                  _showCompletionMessage = false;
+                });
+                _saveCount();
+                Navigator.pop(context);
+              },
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -306,31 +299,32 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             style: TextStyle(fontFamily: 'Amiri', color: Color(0xFFD4AF37))),
         content: SingleChildScrollView(
           child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: _adhkar.map((dhikr) {
-                return ListTile(
-                  title: Text(dhikr,
-                      style: TextStyle(
-                          fontFamily: 'Amiri',
-                          color: dhikr == _currentDhikr
-                              ? const Color(0xFFD4AF37)
-                              : Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold)),
-                  trailing: dhikr == _currentDhikr
-                      ? const Icon(Icons.check_circle, color: Color(0xFFD4AF37))
-                      : null,
-                  onTap: () {
-                    setState(() {
-                      _currentDhikr = dhikr;
-                      _count = 0;
-                      _showCompletionMessage = false;
-                    });
-                    _saveCount();
-                    Navigator.pop(context);
-                  },
-                );
-              }).toList()),
+            mainAxisSize: MainAxisSize.min,
+            children: _adhkar.map((dhikr) {
+              return ListTile(
+                title: Text(dhikr,
+                    style: TextStyle(
+                        fontFamily: 'Amiri',
+                        color: dhikr == _currentDhikr
+                            ? const Color(0xFFD4AF37)
+                            : Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold)),
+                trailing: dhikr == _currentDhikr
+                    ? const Icon(Icons.check_circle, color: Color(0xFFD4AF37))
+                    : null,
+                onTap: () {
+                  setState(() {
+                    _currentDhikr = dhikr;
+                    _count = 0;
+                    _showCompletionMessage = false;
+                  });
+                  _saveCount();
+                  Navigator.pop(context);
+                },
+              );
+            }).toList(),
+          ),
         ),
       ),
     );
@@ -428,8 +422,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           style: const TextStyle(
               fontFamily: 'Amiri', color: Colors.white, fontSize: 16)),
       value: value,
-      activeThumbColor: const Color(
-          0xFFD4AF37), // ✅ تم الإصلاح: activeColor -> activeThumbColor
+      activeThumbColor: const Color(0xFFD4AF37),
       onChanged: onChanged,
     );
   }
@@ -473,13 +466,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           width: 300 * _rippleAnimation.value,
                           height: 300 * _rippleAnimation.value,
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withValues(
-                                alpha: 0.3 *
-                                    (1 -
-                                        _rippleAnimation
-                                            .value)), // ✅ تم الإصلاح
-                          ),
+                              shape: BoxShape.circle,
+                              color: Colors.white.withValues(
+                                  alpha: 0.3 * (1 - _rippleAnimation.value))),
                         ),
                       );
                     },
@@ -518,8 +507,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               color: const Color(0xFFD4AF37), width: 3),
                           boxShadow: [
                             BoxShadow(
-                                color: Colors.black
-                                    .withValues(alpha: 0.5), // ✅ تم الإصلاح
+                                color: Colors.black.withValues(alpha: 0.5),
                                 blurRadius: 25,
                                 offset: const Offset(0, 15))
                           ],
@@ -608,8 +596,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           borderRadius: BorderRadius.circular(15),
                           boxShadow: [
                             BoxShadow(
-                                color: Colors.black
-                                    .withValues(alpha: 0.3), // ✅ تم الإصلاح
+                                color: Colors.black.withValues(alpha: 0.3),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4))
                           ]),
@@ -631,7 +618,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             return Transform.scale(
                               scale: _pulseAnimation.value,
                               child: SizedBox(
-                                // ✅ تم الإصلاح: Container -> SizedBox لحل sized_box_for_whitespace
                                 width: 280,
                                 height: 280,
                                 child: Stack(
@@ -672,8 +658,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                               style: TextStyle(
                                                   fontFamily: 'Amiri',
                                                   fontSize: 20,
-                                                  color: Colors.white.withValues(
-                                                      alpha: 0.9), // ✅ تم الإصلاح
+                                                  color: Colors.white
+                                                      .withValues(alpha: 0.9),
                                                   shadows: const [
                                                     Shadow(
                                                         color: Color.fromRGBO(
@@ -685,8 +671,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                               style: TextStyle(
                                                   fontFamily: 'Amiri',
                                                   fontSize: 20,
-                                                  color: Colors.white.withValues(
-                                                      alpha: 0.9), // ✅ تم الإصلاح
+                                                  color: Colors.white
+                                                      .withValues(alpha: 0.9),
                                                   shadows: const [
                                                     Shadow(
                                                         color: Color.fromRGBO(
@@ -699,16 +685,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                       Positioned(
                                         bottom: 40,
                                         child: Text(
-                                          _adhkar[(_currentDhikrIndex + 1) %
-                                              _adhkar.length],
-                                          style: TextStyle(
-                                              fontFamily: 'Amiri',
-                                              fontSize: 16,
-                                              color: Colors.white.withValues(
-                                                  alpha: 0.6), // ✅ تم الإصلاح
-                                              fontStyle: FontStyle.italic),
-                                          textAlign: TextAlign.center,
-                                        ),
+                                            _adhkar[(_currentDhikrIndex + 1) %
+                                                _adhkar.length],
+                                            style: TextStyle(
+                                                fontFamily: 'Amiri',
+                                                fontSize: 16,
+                                                color: Colors.white
+                                                    .withValues(alpha: 0.6),
+                                                fontStyle: FontStyle.italic),
+                                            textAlign: TextAlign.center),
                                       ),
                                   ],
                                 ),
@@ -724,13 +709,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 20, vertical: 15),
                       decoration: BoxDecoration(
-                          color: const Color(0xFF2C3E50)
-                              .withValues(alpha: 0.9), // ✅ تم الإصلاح
+                          color: const Color(0xFF2C3E50).withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                                color: Colors.black
-                                    .withValues(alpha: 0.3), // ✅ تم الإصلاح
+                                color: Colors.black.withValues(alpha: 0.3),
                                 blurRadius: 15,
                                 offset: const Offset(0, 5))
                           ]),
@@ -743,31 +726,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 20, vertical: 12),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFE8837C),
-                                borderRadius: BorderRadius.circular(25),
-                                boxShadow: [
-                                  BoxShadow(
-                                      color: const Color(0xFFE8837C)
-                                          .withValues(alpha: 0.4),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 3))
-                                ],
-                              ),
+                                  color: const Color(0xFFE8837C),
+                                  borderRadius: BorderRadius.circular(25),
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: const Color(0xFFE8837C)
+                                            .withValues(alpha: 0.4),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 3))
+                                  ]),
                               child: const Row(
-                                // ✅ تم الإصلاح: إضافة const
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.refresh,
-                                      color: Colors.white, size: 22),
-                                  SizedBox(width: 8),
-                                  Text('تصفير',
-                                      style: TextStyle(
-                                          fontFamily: 'Amiri',
-                                          fontSize: 18,
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold)),
-                                ],
-                              ),
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.refresh,
+                                        color: Colors.white, size: 22),
+                                    SizedBox(width: 8),
+                                    Text('تصفير',
+                                        style: TextStyle(
+                                            fontFamily: 'Amiri',
+                                            fontSize: 18,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold))
+                                  ]),
                             ),
                           ),
                           GestureDetector(
@@ -776,16 +756,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 20, vertical: 12),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFD4AF37),
-                                borderRadius: BorderRadius.circular(25),
-                                boxShadow: [
-                                  BoxShadow(
-                                      color: const Color(0xFFD4AF37)
-                                          .withValues(alpha: 0.4),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 3))
-                                ],
-                              ),
+                                  color: const Color(0xFFD4AF37),
+                                  borderRadius: BorderRadius.circular(25),
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: const Color(0xFFD4AF37)
+                                            .withValues(alpha: 0.4),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 3))
+                                  ]),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -811,24 +790,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 15, vertical: 10),
                               decoration: BoxDecoration(
-                                color: Colors.white
-                                    .withValues(alpha: 0.1), // ✅ تم الإصلاح
-                                borderRadius: BorderRadius.circular(15),
-                                border: Border.all(
-                                    color: const Color(0xFFD4AF37)
-                                        .withValues(alpha: 0.5)),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize
-                                    .min, // ✅ تم الإصلاح: إضافة mainAxisSize
-                                children: const [
-                                  // ✅ تم الإصلاح: إضافة const
-                                  Icon(Icons.format_list_numbered,
-                                      color: Color(0xFFD4AF37), size: 22),
-                                  SizedBox(width: 8),
-                                  // ملاحظة: النص هنا ديناميكي لذا لا يمكن وضع const للـ Row كاملاً، لكن الأيقونة و Sizedbox يمكن أن تكون const
-                                ],
-                              ),
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(15),
+                                  border: Border.all(
+                                      color: const Color(0xFFD4AF37)
+                                          .withValues(alpha: 0.5))),
+                              child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.format_list_numbered,
+                                        color: Color(0xFFD4AF37), size: 22),
+                                    SizedBox(width: 8)
+                                  ]),
                             ),
                           ),
                         ],
@@ -853,13 +826,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.25), // ✅ تم الإصلاح
+          color: Colors.white.withValues(alpha: 0.25),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-              color: Colors.white.withValues(alpha: 0.4)), // ✅ تم الإصلاح
+          border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1), // ✅ تم الإصلاح
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 5,
                 offset: const Offset(0, 2))
           ],
@@ -880,7 +852,7 @@ class ArcProgressPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - 15;
     final bgPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.15) // ✅ تم الإصلاح
+      ..color = Colors.white.withValues(alpha: 0.15)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 8
       ..strokeCap = StrokeCap.round;
