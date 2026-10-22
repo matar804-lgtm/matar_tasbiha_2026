@@ -2,6 +2,7 @@ import 'package:adhan/adhan.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
@@ -19,11 +20,11 @@ class PrayerNotificationService {
   // الإعدادات
   // ============================================================
 
-  static const String _noticeChannelId = 'prayer_notice_v4';
+  static const String _noticeChannelId = 'prayer_notice_v5';
 
-  static const String _vibrateChannelId = 'prayer_vibrate_v4';
+  static const String _vibrateChannelId = 'prayer_vibrate_v5';
 
-  static const String _soundChannelPrefix = 'adhan_sound_v4_';
+  static const String _soundChannelPrefix = 'adhan_sound_v5_';
 
   static const int _notificationBaseId = 3000;
 
@@ -187,6 +188,30 @@ class PrayerNotificationService {
       print('❌ خطأ في طلب الصلاحيات: $e');
       return false;
     }
+  }
+
+  // ============================================================
+  // اختيار نمط الجدولة حسب إذن Android للمنبهات الدقيقة.
+  // بعض أجهزة Android الحديثة لا تمنح هذا الإذن تلقائياً.
+  // ============================================================
+  static Future<AndroidScheduleMode> _getScheduleMode() async {
+    try {
+      final PermissionStatus status =
+          await Permission.scheduleExactAlarm.status;
+
+      if (status.isGranted) {
+        print('✅ إذن المنبهات الدقيقة متاح؛ الجدولة ستكون دقيقة.');
+        return AndroidScheduleMode.exactAllowWhileIdle;
+      }
+    } catch (e) {
+      print('⚠️ تعذر التحقق من إذن المنبهات الدقيقة: $e');
+    }
+
+    print(
+      '⚠️ إذن المنبهات الدقيقة غير متاح؛ سيتم استخدام الجدولة البديلة '
+      'وقد يتأخر التنبيه حسب نظام Android.',
+    );
+    return AndroidScheduleMode.inexactAllowWhileIdle;
   }
 
   // ============================================================
@@ -402,12 +427,13 @@ class PrayerNotificationService {
     final int notificationId =
         _notificationBaseId + (dayOffset * 100) + (prayerIndex * 2);
 
-    final int adhanId = notificationId + 1;
-
     final String prayerName = _getPrayerName(prayer);
 
     // ==========================================================
-    // زر الأذان وحده يتحكم في تشغيل الصوت.
+    // نمط النسخ التي كانت تعمل: إشعار واحد عند وقت الصلاة.
+    // إذا كان الأذان مفعلاً يكون صوت الأذان مع الإشعار نفسه،
+    // وإذا كان معطلاً يبقى تنبيه الصلاة مرئياً وصامتاً.
+    // ==========================================================
     if (!enableAdhan) {
       await _scheduleNoticeNotification(
         id: notificationId,
@@ -416,40 +442,19 @@ class PrayerNotificationService {
       );
       return;
     }
-    // إشعار دخول وقت الصلاة
-    // ==========================================================
-
-    await _scheduleNoticeNotification(
-      id: notificationId,
-      prayerName: prayerName,
-      scheduledDate: prayerTime,
-    );
-
-    // ==========================================================
-    // تشغيل الأذان بعد 3 ثوانٍ
-    // ==========================================================
-
-    final tz.TZDateTime adhanTime = prayerTime.add(_adhanDelay);
-
-    // ==========================================================
-    // تحديد الصوت
-    // ==========================================================
 
     final String rawSound = _getRawSoundName(selectedSoundId);
-
     final String channelId = '$_soundChannelPrefix$rawSound';
 
-    // إنشاء قناة الصوت
     await _createSoundChannel(
       channelId: channelId,
       rawSound: rawSound,
     );
 
-    // جدولة الأذان
     await _scheduleAdhanNotification(
-      id: adhanId,
+      id: notificationId,
       prayerName: prayerName,
-      scheduledDate: adhanTime,
+      scheduledDate: prayerTime,
       channelId: channelId,
       rawSound: rawSound,
       isTakbeer: false,
@@ -488,7 +493,7 @@ class PrayerNotificationService {
       'حان الآن وقت صلاة $prayerName',
       scheduledDate,
       details,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: await _getScheduleMode(),
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );
@@ -526,7 +531,7 @@ class PrayerNotificationService {
       'حان الآن وقت صلاة $prayerName',
       scheduledDate,
       details,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: await _getScheduleMode(),
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );
@@ -564,7 +569,7 @@ class PrayerNotificationService {
       'حان الآن وقت صلاة $prayerName',
       scheduledDate,
       details,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: await _getScheduleMode(),
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );
@@ -595,7 +600,7 @@ class PrayerNotificationService {
       sound: RawResourceAndroidNotificationSound(
         rawSound,
       ),
-      enableVibration: false,
+      enableVibration: true,
       autoCancel: true,
       onlyAlertOnce: true,
       icon: '@mipmap/ic_launcher',
@@ -614,7 +619,7 @@ class PrayerNotificationService {
           : 'حان الآن وقت صلاة $prayerName',
       scheduledDate,
       details,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: await _getScheduleMode(),
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );
