@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:quran/quran.dart' as quran;
 import 'dart:convert';
+import '../services/surah_revelation_service.dart';
 
 class SurahDetailScreen extends StatefulWidget {
   final int surahNumber;
@@ -11,17 +12,20 @@ class SurahDetailScreen extends StatefulWidget {
   final String? surahName;
 
   const SurahDetailScreen({
-    Key? key,
+    super.key,
     required this.surahNumber,
     this.startAyah = 1,
     this.surahName,
-  }) : super(key: key);
+  });
 
   @override
   State<SurahDetailScreen> createState() => _SurahDetailScreenState();
 }
 
 class _SurahDetailScreenState extends State<SurahDetailScreen> {
+  String? get revelationLabel =>
+      SurahRevelationService.labelAr(widget.surahNumber);
+
   double _fontSize = 24;
   String _fontFamily = 'Amiri';
   late int _verseCount;
@@ -35,7 +39,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     _verseCount = quran.getVerseCount(widget.surahNumber);
     _loadSettings();
     _loadBookmarks();
-    _currentAyah = widget.startAyah;
+    _currentAyah = widget.startAyah.clamp(1, _verseCount);
   }
 
   @override
@@ -204,7 +208,6 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   Widget build(BuildContext context) {
     final displaySurahName =
         widget.surahName ?? quran.getSurahNameArabic(widget.surahNumber);
-    final isMeccan = quran.getPlaceOfRevelation(widget.surahNumber) == 'Makkah';
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -223,6 +226,15 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
               onPressed: () => Navigator.pop(context)),
           actions: [
+            IconButton(
+              icon: const Icon(
+                Icons.home_rounded,
+                color: Colors.white,
+              ),
+              onPressed: () => Navigator.of(context).popUntil(
+                (route) => route.isFirst,
+              ),
+            ),
             IconButton(
                 icon: const Icon(Icons.remove, color: Colors.white),
                 onPressed: () {
@@ -276,7 +288,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         border: Border.all(
                             color: const Color(0xFFD4AF37), width: 2),
                         borderRadius: BorderRadius.circular(25),
-                        color: Colors.white.withOpacity(0.1)),
+                        color: Colors.white.withValues(alpha: 0.1)),
                     child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -287,9 +299,10 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                           _buildInfoBadge(
                               'آياتها: ${_toArabicNumber(_verseCount)}',
                               Colors.lightBlue),
-                          const SizedBox(width: 10),
-                          _buildInfoBadge(
-                              isMeccan ? 'مكية' : 'مدنية', Colors.green),
+                          if (revelationLabel != null) ...[
+                            const SizedBox(width: 10),
+                            _buildInfoBadge(revelationLabel!, Colors.green),
+                          ],
                         ]),
                   ),
                   const SizedBox(height: 15),
@@ -428,8 +441,9 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
           fontFamily: _fontFamily,
           fontSize: _fontSize,
           color: Colors.black87,
-          backgroundColor:
-              isCurrent ? Colors.amber.withOpacity(0.3) : Colors.transparent,
+          backgroundColor: isCurrent
+              ? Colors.amber.withValues(alpha: 0.3)
+              : Colors.transparent,
         ),
         recognizer: LongPressGestureRecognizer()
           ..onLongPress = () {
@@ -463,7 +477,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-          color: color.withOpacity(0.2),
+          color: color.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: color, width: 1.5)),
       child: Text(text,

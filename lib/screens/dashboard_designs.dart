@@ -14,14 +14,13 @@ class ClassicHomeDesign extends StatelessWidget {
   static const Color goldColor = Color(0xFFD4AF37);
 
   const ClassicHomeDesign(
-      {Key? key,
+      {super.key,
       required this.hijriDate,
       required this.gregorianDate,
       required this.onTasbih,
       required this.onQuran,
       required this.onAdhkar,
-      required this.onQibla})
-      : super(key: key);
+      required this.onQibla});
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +92,7 @@ class ClassicHomeDesign extends StatelessWidget {
                       colors: [Color(0xFFD4AF37), Color(0xFFB8860B)]),
                   boxShadow: [
                     BoxShadow(
-                        color: goldColor.withOpacity(0.4),
+                        color: goldColor.withValues(alpha: 0.4),
                         blurRadius: 15,
                         spreadRadius: 3)
                   ]),
@@ -121,15 +120,14 @@ class VerticalHomeDesign extends StatelessWidget {
   static const Color goldColor = Color(0xFFD4AF37);
 
   const VerticalHomeDesign(
-      {Key? key,
+      {super.key,
       required this.hijriDate,
       required this.gregorianDate,
       required this.onTasbih,
       required this.onQuran,
       required this.onAdhkar,
       required this.onQibla,
-      required this.onSettings})
-      : super(key: key);
+      required this.onSettings});
 
   @override
   Widget build(BuildContext context) {
@@ -162,7 +160,7 @@ class VerticalHomeDesign extends StatelessWidget {
                       fontWeight: FontWeight.bold)),
             ]),
             const SizedBox(height: 20),
-            Icon(Icons.mosque, size: 80, color: goldColor.withOpacity(0.6)),
+            Icon(Icons.mosque, size: 80, color: goldColor.withValues(alpha: 0.6)),
             const SizedBox(height: 15),
             const Text('تسبيحة',
                 style: TextStyle(
@@ -205,7 +203,7 @@ class VerticalHomeDesign extends StatelessWidget {
             border: Border.all(color: const Color(0xFF0A0E27), width: 3),
             boxShadow: [
               BoxShadow(
-                  color: goldColor.withOpacity(0.5),
+                  color: goldColor.withValues(alpha: 0.5),
                   blurRadius: 20,
                   spreadRadius: 5)
             ]),
@@ -240,15 +238,14 @@ class CentralCircleHomeDesign extends StatelessWidget {
   static const Color goldColor = Color(0xFFD4AF37);
 
   const CentralCircleHomeDesign(
-      {Key? key,
+      {super.key,
       required this.hijriDate,
       required this.gregorianDate,
       required this.onTasbih,
       required this.onQuran,
       required this.onAdhkar,
       required this.onQibla,
-      required this.onSettings})
-      : super(key: key);
+      required this.onSettings});
 
   @override
   Widget build(BuildContext context) {
@@ -305,22 +302,22 @@ class CentralCircleHomeDesign extends StatelessWidget {
                       ]),
                       boxShadow: [
                         BoxShadow(
-                            color: goldColor.withOpacity(0.6),
+                            color: goldColor.withValues(alpha: 0.6),
                             blurRadius: 50,
                             spreadRadius: 15),
                         BoxShadow(
-                            color: Colors.black.withOpacity(0.4),
+                            color: Colors.black.withValues(alpha: 0.4),
                             blurRadius: 30,
                             offset: const Offset(0, 15))
                       ],
                     ),
-                    child: Column(
+                    child: const Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.touch_app_rounded,
+                        Icon(Icons.touch_app_rounded,
                             size: 60, color: Color(0xFF0A0E27)),
-                        const SizedBox(height: 15),
-                        const Text('ابدأ التسبيح',
+                        SizedBox(height: 15),
+                        Text('ابدأ التسبيح',
                             style: TextStyle(
                                 fontFamily: 'Amiri',
                                 fontSize: 24,
@@ -368,12 +365,12 @@ class CentralCircleHomeDesign extends StatelessWidget {
         width: 110,
         height: 110,
         decoration: BoxDecoration(
-            color: const Color(0xFF162447).withOpacity(0.6),
+            color: const Color(0xFF162447).withValues(alpha: 0.6),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: goldColor.withOpacity(0.5), width: 2),
+            border: Border.all(color: goldColor.withValues(alpha: 0.5), width: 2),
             boxShadow: [
               BoxShadow(
-                  color: goldColor.withOpacity(0.3),
+                  color: goldColor.withValues(alpha: 0.3),
                   blurRadius: 15,
                   offset: const Offset(0, 8))
             ]),
@@ -383,7 +380,7 @@ class CentralCircleHomeDesign extends StatelessWidget {
             Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                    color: goldColor.withOpacity(0.15), shape: BoxShape.circle),
+                    color: goldColor.withValues(alpha: 0.15), shape: BoxShape.circle),
                 child: Icon(icon, size: 35, color: goldColor)),
             const SizedBox(height: 10),
             Text(label,

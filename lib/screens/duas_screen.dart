@@ -1,40 +1,73 @@
 import 'package:flutter/material.dart';
+
 import '../data/duas_data.dart';
 import 'dua_detail_screen.dart';
 
 class DuasScreen extends StatelessWidget {
-  const DuasScreen({Key? key}) : super(key: key);
+  const DuasScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    const gold = Color(0xFFD4AF37);
+
+    final mutedGold =
+        isDark ? const Color(0xFFC9B896) : const Color(0xFF8A6A18);
+
+    final card = theme.colorScheme.surface;
+    final text = theme.colorScheme.onSurface;
+    final secondary =
+        theme.colorScheme.onSurface.withValues(alpha: 0.65);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0A201A),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1B342B),
+        backgroundColor: theme.colorScheme.surface,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'الأدعية المأثورة',
           style: TextStyle(
             fontFamily: 'Amiri',
-            color: Color(0xFFC9B896),
+            color: mutedGold,
             fontSize: 22,
             fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFFC9B896)),
+          icon: Icon(
+            Icons.arrow_back_ios_new,
+            color: mutedGold,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.home_rounded,
+              color: mutedGold,
+            ),
+            onPressed: () {
+              Navigator.of(context).popUntil(
+                (route) => route.isFirst,
+              );
+            },
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(40),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
             child: Text(
               'موسوعة شاملة للأدعية من القرآن والسنة',
               style: TextStyle(
                 fontFamily: 'Amiri',
-                color: Colors.white.withValues(alpha: 0.7),
+                color: secondary,
                 fontSize: 12,
               ),
               textAlign: TextAlign.center,
@@ -47,28 +80,35 @@ class DuasScreen extends StatelessWidget {
         itemCount: allDuasCategories.length,
         itemBuilder: (context, index) {
           final category = allDuasCategories[index];
+
           return Card(
-            color: const Color(0xFF132A22),
+            color: card,
+            elevation: isDark ? 0 : 1,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
-              side: const BorderSide(color: Color(0xFFC9B896), width: 1),
+              side: BorderSide(
+                color: mutedGold.withValues(alpha: 0.45),
+              ),
             ),
-            margin: const EdgeInsets.only(bottom: 16),
+            margin: const EdgeInsets.only(
+              bottom: 16,
+            ),
+            clipBehavior: Clip.antiAlias,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // ===== عنوان الفئة =====
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 15,
+                  ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1B342B),
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(20)),
+                    color: isDark
+                        ? const Color(0xFF1B342B)
+                        : const Color(0xFFE8F0EC),
                     border: Border(
                       bottom: BorderSide(
-                        color: const Color(0xFFC9B896).withValues(alpha: 0.3),
-                        width: 1,
+                        color: mutedGold.withValues(alpha: 0.25),
                       ),
                     ),
                   ),
@@ -76,15 +116,19 @@ class DuasScreen extends StatelessWidget {
                     children: [
                       Text(
                         category.icon,
-                        style: const TextStyle(fontSize: 28),
+                        style: const TextStyle(
+                          fontSize: 28,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           category.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'Amiri',
-                            color: Color(0xFFF0E0B5),
+                            color: isDark
+                                ? const Color(0xFFF0E0B5)
+                                : const Color(0xFF345447),
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
@@ -92,17 +136,20 @@ class DuasScreen extends StatelessWidget {
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color:
-                              const Color(0xFFC9B896).withValues(alpha: 0.15),
+                          color: gold.withValues(alpha: 0.14),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
                           '${category.duas.length}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'Amiri',
-                            color: Color(0xFFC9B896),
+                            color: isDark
+                                ? gold
+                                : const Color(0xFF7A5C10),
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),
@@ -111,113 +158,127 @@ class DuasScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                // ===== قائمة الأدعية =====
-                ...category.duas.map((dua) {
-                  return InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => DuaDetailScreen(
-                            title: dua.title,
-                            content: dua.arabic,
-                            virtue: dua.virtue,
-                            repeatCount: dua.repeatCount,
-                            source: dua.source,
-                          ),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color:
-                                const Color(0xFFC9B896).withValues(alpha: 0.1),
-                            width: 1,
-                          ),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFC9B896)
-                                  .withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.menu_book_rounded,
-                              color: Color(0xFFC9B896),
-                              size: 24,
+                ...category.duas.map(
+                  (dua) {
+                    return InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => DuaDetailScreen(
+                              title: dua.title,
+                              content: dua.arabic,
+                              virtue: dua.virtue,
+                              repeatCount: dua.repeatCount,
+                              source: dua.source,
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  dua.title,
-                                  style: const TextStyle(
-                                    fontFamily: 'Amiri',
-                                    color: Color(0xFFF0E0B5),
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.bold,
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color:
+                                  mutedGold.withValues(alpha: 0.12),
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color:
+                                    gold.withValues(alpha: 0.12),
+                                borderRadius:
+                                    BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.menu_book_rounded,
+                                color: mutedGold,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    dua.title,
+                                    style: TextStyle(
+                                      fontFamily: 'Amiri',
+                                      color: isDark
+                                          ? const Color(
+                                              0xFFF0E0B5,
+                                            )
+                                          : text,
+                                      fontSize: 17,
+                                      fontWeight:
+                                          FontWeight.bold,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.repeat_rounded,
-                                      color: const Color(0xFFD4AF37),
-                                      size: 14,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'التكرار: ${dua.repeatCount}',
-                                      style: const TextStyle(
-                                        fontFamily: 'Amiri',
-                                        color: Color(0xFFD4AF37),
-                                        fontSize: 12,
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.repeat_rounded,
+                                        color: gold,
+                                        size: 14,
                                       ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Icon(
-                                      Icons.info_outline_rounded,
-                                      color: const Color(0xFF9AB09F),
-                                      size: 14,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Expanded(
-                                      child: Text(
-                                        dua.source,
-                                        style: const TextStyle(
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'التكرار: ${dua.repeatCount}',
+                                        style: TextStyle(
                                           fontFamily: 'Amiri',
-                                          color: Color(0xFF9AB09F),
+                                          color: isDark
+                                              ? gold
+                                              : const Color(
+                                                  0xFF7A5C10,
+                                                ),
                                           fontSize: 12,
                                         ),
-                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                      const SizedBox(width: 12),
+                                      Icon(
+                                        Icons.info_outline_rounded,
+                                        color: secondary,
+                                        size: 14,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          dua.source,
+                                          style: TextStyle(
+                                            fontFamily:
+                                                'Amiri',
+                                            color: secondary,
+                                            fontSize: 12,
+                                          ),
+                                          overflow:
+                                              TextOverflow
+                                                  .ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          const Icon(
-                            Icons.arrow_forward_ios,
-                            color: Color(0xFFC9B896),
-                            size: 16,
-                          ),
-                        ],
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              color: mutedGold,
+                              size: 16,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                }),
+                    );
+                  },
+                ),
               ],
             ),
           );

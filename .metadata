@@ -1,45 +1,51 @@
-# This file tracks properties of this Flutter project.
-# Used by Flutter tool to assess capabilities and perform upgrades etc.
-#
-# This file should be version controlled and should not be manually edited.
+import 'package:shared_preferences/shared_preferences.dart'; // تأكد من وجود هذا الاستيراد
 
-version:
-  revision: "ad70ec4617166f1c38e5d2bfd388af71fda14f06"
-  channel: "stable"
+class MyApp extends StatefulWidget {
+  const MyApp({Key? key}) : super(key: key);
 
-project_type: app
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
 
-# Tracks metadata for the flutter migrate command
-migration:
-  platforms:
-    - platform: root
-      create_revision: ad70ec4617166f1c38e5d2bfd388af71fda14f06
-      base_revision: ad70ec4617166f1c38e5d2bfd388af71fda14f06
-    - platform: android
-      create_revision: ad70ec4617166f1c38e5d2bfd388af71fda14f06
-      base_revision: ad70ec4617166f1c38e5d2bfd388af71fda14f06
-    - platform: ios
-      create_revision: ad70ec4617166f1c38e5d2bfd388af71fda14f06
-      base_revision: ad70ec4617166f1c38e5d2bfd388af71fda14f06
-    - platform: linux
-      create_revision: ad70ec4617166f1c38e5d2bfd388af71fda14f06
-      base_revision: ad70ec4617166f1c38e5d2bfd388af71fda14f06
-    - platform: macos
-      create_revision: ad70ec4617166f1c38e5d2bfd388af71fda14f06
-      base_revision: ad70ec4617166f1c38e5d2bfd388af71fda14f06
-    - platform: web
-      create_revision: ad70ec4617166f1c38e5d2bfd388af71fda14f06
-      base_revision: ad70ec4617166f1c38e5d2bfd388af71fda14f06
-    - platform: windows
-      create_revision: ad70ec4617166f1c38e5d2bfd388af71fda14f06
-      base_revision: ad70ec4617166f1c38e5d2bfd388af71fda14f06
+class _MyAppState extends State<MyApp> {
+  bool _isDarkMode = false;
 
-  # User provided section
+  @override
+  void initState() {
+    super.initState();
+    _loadTheme();
+  }
 
-  # List of Local paths (relative to this file) that should be
-  # ignored by the migrate tool.
-  #
-  # Files that are not part of the templates will be ignored by default.
-  unmanaged_files:
-    - 'lib/main.dart'
-    - 'ios/Runner.xcodeproj/project.pbxproj'
+  Future<void> _loadTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isDarkMode = prefs.getBool('isDarkMode') ?? false;
+    });
+  }
+
+  // دالة لتحديث الثيم من أي شاشة في التطبيق
+  void toggleTheme(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDarkMode', value);
+    setState(() => _isDarkMode = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'تطبيق تسبيحة',
+      // ✅ تطبيق الثيم بناءً على القيمة المحفوظة
+      themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      theme: ThemeData.light().copyWith(
+        primaryColor: const Color(0xFF1B5E20),
+        scaffoldBackgroundColor: Colors.white,
+      ),
+      darkTheme: ThemeData.dark().copyWith(
+        primaryColor: const Color(0xFF1B5E20),
+        scaffoldBackgroundColor: const Color(0xFF0A0E27), // لون الخلفية الليلي
+      ),
+      home: const SplashScreen(), // أو DashboardScreen حسب هيكل تطبيقك
+    );
+  }
+}

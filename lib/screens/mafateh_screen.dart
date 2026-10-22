@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MafatehScreen extends StatefulWidget {
-  const MafatehScreen({Key? key}) : super(key: key);
+  const MafatehScreen({super.key});
 
   @override
   State<MafatehScreen> createState() => _MafatehScreenState();
@@ -259,6 +259,17 @@ class _MafatehScreenState extends State<MafatehScreen> {
           icon: const Icon(Icons.arrow_back_ios, color: Color(0xFFD4AF37)),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.home_rounded,
+              color: Color(0xFFD4AF37),
+            ),
+            onPressed: () => Navigator.of(context).popUntil(
+              (route) => route.isFirst,
+            ),
+          ),
+        ],
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -285,7 +296,7 @@ class _MafatehScreenState extends State<MafatehScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.vpn_key,
@@ -329,7 +340,7 @@ class _MafatehScreenState extends State<MafatehScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child:
@@ -382,20 +393,20 @@ class _MafatehScreenState extends State<MafatehScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFFD4AF37).withOpacity(0.15),
-            const Color(0xFFB8860B).withOpacity(0.08),
+            const Color(0xFFD4AF37).withValues(alpha: 0.15),
+            const Color(0xFFB8860B).withValues(alpha: 0.08),
           ],
         ),
         borderRadius: BorderRadius.circular(15),
         border: Border.all(
           color: isCompleted
               ? const Color(0xFF4CAF50)
-              : const Color(0xFFD4AF37).withOpacity(0.5),
+              : const Color(0xFFD4AF37).withValues(alpha: 0.5),
           width: isCompleted ? 2 : 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFD4AF37).withOpacity(0.15),
+            color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -409,7 +420,7 @@ class _MafatehScreenState extends State<MafatehScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFD4AF37).withOpacity(0.2),
+                  color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.vpn_key,
@@ -433,7 +444,7 @@ class _MafatehScreenState extends State<MafatehScreen> {
                 decoration: BoxDecoration(
                   color: isCompleted
                       ? const Color(0xFF4CAF50)
-                      : const Color(0xFFD4AF37).withOpacity(0.3),
+                      : const Color(0xFFD4AF37).withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: Text(
@@ -465,10 +476,10 @@ class _MafatehScreenState extends State<MafatehScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFFD4AF37).withOpacity(0.1),
+              color: const Color(0xFFD4AF37).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: const Color(0xFFD4AF37).withOpacity(0.3),
+                color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
               ),
             ),
             child: Row(
@@ -507,7 +518,8 @@ class _MafatehScreenState extends State<MafatehScreen> {
                         borderRadius: BorderRadius.circular(25),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFD4AF37).withOpacity(0.4),
+                            color:
+                                const Color(0xFFD4AF37).withValues(alpha: 0.4),
                             blurRadius: 10,
                             offset: const Offset(0, 3),
                           ),
@@ -530,7 +542,7 @@ class _MafatehScreenState extends State<MafatehScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(Icons.refresh,

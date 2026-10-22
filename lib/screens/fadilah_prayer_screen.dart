@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class FadilahPrayerScreen extends StatelessWidget {
-  const FadilahPrayerScreen({Key? key}) : super(key: key);
+  const FadilahPrayerScreen({super.key});
 
   // النص الكامل منسقاً وجاهزاً للعرض
   final String prayerText = """
@@ -41,6 +41,15 @@ class FadilahPrayerScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.home_rounded,
+              color: Color(0xFFD4AF37),
+            ),
+            onPressed: () => Navigator.of(context).popUntil(
+              (route) => route.isFirst,
+            ),
+          ),
           // زر نسخ النص للفائدة
           IconButton(
             icon: const Icon(Icons.copy_all_rounded, color: Color(0xFFD4AF37)),
@@ -77,7 +86,7 @@ class FadilahPrayerScreen extends StatelessWidget {
                 width: 60,
                 height: 3,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFD4AF37).withOpacity(0.5),
+                  color: const Color(0xFFD4AF37).withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -105,7 +114,7 @@ class FadilahPrayerScreen extends StatelessWidget {
                 width: 60,
                 height: 3,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFD4AF37).withOpacity(0.5),
+                  color: const Color(0xFFD4AF37).withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

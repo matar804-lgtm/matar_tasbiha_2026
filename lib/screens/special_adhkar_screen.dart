@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/special_adhkar_data.dart';
 
 class SpecialAdhkarScreen extends StatefulWidget {
-  const SpecialAdhkarScreen({Key? key}) : super(key: key);
+  const SpecialAdhkarScreen({super.key});
 
   @override
   State<SpecialAdhkarScreen> createState() => _SpecialAdhkarScreenState();
@@ -84,6 +84,17 @@ class _SpecialAdhkarScreenState extends State<SpecialAdhkarScreen> {
           icon: const Icon(Icons.arrow_back_ios, color: Color(0xFFD4AF37)),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.home_rounded,
+              color: Color(0xFFD4AF37),
+            ),
+            onPressed: () => Navigator.of(context).popUntil(
+              (route) => route.isFirst,
+            ),
+          ),
+        ],
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -120,18 +131,18 @@ class _SpecialAdhkarScreenState extends State<SpecialAdhkarScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            color.withOpacity(0.2),
-            color.withOpacity(0.1),
+            color.withValues(alpha: 0.2),
+            color.withValues(alpha: 0.1),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: color.withOpacity(0.5),
+          color: color.withValues(alpha: 0.5),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -144,7 +155,7 @@ class _SpecialAdhkarScreenState extends State<SpecialAdhkarScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.3),
+              color: color.withValues(alpha: 0.3),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(18),
                 topRight: Radius.circular(18),
@@ -187,12 +198,12 @@ class _SpecialAdhkarScreenState extends State<SpecialAdhkarScreen> {
                   margin: const EdgeInsets.only(bottom: 16),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(15),
                     border: Border.all(
                       color: isCompleted
                           ? const Color(0xFF4CAF50)
-                          : color.withOpacity(0.3),
+                          : color.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
@@ -218,7 +229,7 @@ class _SpecialAdhkarScreenState extends State<SpecialAdhkarScreen> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.1),
+                            color: color.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
@@ -226,7 +237,7 @@ class _SpecialAdhkarScreenState extends State<SpecialAdhkarScreen> {
                             style: TextStyle(
                               fontFamily: 'Amiri',
                               fontSize: 13,
-                              color: Colors.white.withOpacity(0.7),
+                              color: Colors.white.withValues(alpha: 0.7),
                               fontStyle: FontStyle.italic,
                             ),
                             textAlign: TextAlign.right,
@@ -245,9 +256,8 @@ class _SpecialAdhkarScreenState extends State<SpecialAdhkarScreen> {
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: isCompleted
-                                  ? const Color(0xFF4CAF50)
-                                  : color,
+                              color:
+                                  isCompleted ? const Color(0xFF4CAF50) : color,
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -275,12 +285,15 @@ class _SpecialAdhkarScreenState extends State<SpecialAdhkarScreen> {
                                     ),
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
-                                        colors: [color, color.withOpacity(0.7)],
+                                        colors: [
+                                          color,
+                                          color.withValues(alpha: 0.7)
+                                        ],
                                       ),
                                       borderRadius: BorderRadius.circular(15),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: color.withOpacity(0.4),
+                                          color: color.withValues(alpha: 0.4),
                                           blurRadius: 8,
                                           offset: const Offset(0, 3),
                                         ),
@@ -303,12 +316,12 @@ class _SpecialAdhkarScreenState extends State<SpecialAdhkarScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
+                                    color: Colors.white.withValues(alpha: 0.2),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Icon(
                                     Icons.refresh,
-                                    color: Colors.white.withOpacity(0.8),
+                                    color: Colors.white.withValues(alpha: 0.8),
                                     size: 20,
                                   ),
                                 ),

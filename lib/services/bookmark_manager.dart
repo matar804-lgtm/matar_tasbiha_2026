@@ -1,5 +1,6 @@
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
 
 class BookmarkManager {
   static const String _bookmarksKey = 'quran_bookmarks';
@@ -10,10 +11,22 @@ class BookmarkManager {
     required int ayahNumber,
     required String ayahText,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final bookmarks = _getBookmarksList(prefs);
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    final bookmark = {
+    final List<Map<String, dynamic>> bookmarks = _getBookmarksList(prefs);
+
+    final bool exists = bookmarks.any(
+      (Map<String, dynamic> bookmark) {
+        return bookmark['surahNumber'] == surahNumber &&
+            bookmark['ayahNumber'] == ayahNumber;
+      },
+    );
+
+    if (exists) {
+      return;
+    }
+
+    final Map<String, dynamic> bookmark = <String, dynamic>{
       'surahName': surahName,
       'surahNumber': surahNumber,
       'ayahNumber': ayahNumber,
@@ -21,17 +34,17 @@ class BookmarkManager {
       'timestamp': DateTime.now().millisecondsSinceEpoch,
     };
 
-    final exists = bookmarks.any((b) =>
-        b['surahNumber'] == surahNumber && b['ayahNumber'] == ayahNumber);
+    bookmarks.add(bookmark);
 
-    if (!exists) {
-      bookmarks.add(bookmark);
-      await prefs.setString(_bookmarksKey, jsonEncode(bookmarks));
-    }
+    await prefs.setString(
+      _bookmarksKey,
+      jsonEncode(bookmarks),
+    );
   }
 
   static Future<List<Map<String, dynamic>>> getBookmarks() async {
-    final prefs = await SharedPreferences.getInstance();
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
     return _getBookmarksList(prefs);
   }
 
@@ -39,24 +52,47 @@ class BookmarkManager {
     required int surahNumber,
     required int ayahNumber,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final bookmarks = _getBookmarksList(prefs);
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    bookmarks.removeWhere((b) =>
-        b['surahNumber'] == surahNumber && b['ayahNumber'] == ayahNumber);
+    final List<Map<String, dynamic>> bookmarks = _getBookmarksList(prefs);
 
-    await prefs.setString(_bookmarksKey, jsonEncode(bookmarks));
+    bookmarks.removeWhere(
+      (Map<String, dynamic> bookmark) {
+        return bookmark['surahNumber'] == surahNumber &&
+            bookmark['ayahNumber'] == ayahNumber;
+      },
+    );
+
+    await prefs.setString(
+      _bookmarksKey,
+      jsonEncode(bookmarks),
+    );
   }
 
-  static List<Map<String, dynamic>> _getBookmarksList(SharedPreferences prefs) {
-    final bookmarksString = prefs.getString(_bookmarksKey);
-    if (bookmarksString == null || bookmarksString.isEmpty) return [];
+  static List<Map<String, dynamic>> _getBookmarksList(
+    SharedPreferences prefs,
+  ) {
+    final String? bookmarksString = prefs.getString(_bookmarksKey);
+
+    if (bookmarksString == null || bookmarksString.isEmpty) {
+      return <Map<String, dynamic>>[];
+    }
 
     try {
-      final List<dynamic> decoded = jsonDecode(bookmarksString);
-      return decoded.cast<Map<String, dynamic>>();
-    } catch (e) {
-      return [];
+      final dynamic decoded = jsonDecode(bookmarksString);
+
+      if (decoded is! List) {
+        return <Map<String, dynamic>>[];
+      }
+
+      return decoded
+          .whereType<Map>()
+          .map(
+            (Map item) => Map<String, dynamic>.from(item),
+          )
+          .toList();
+    } catch (_) {
+      return <Map<String, dynamic>>[];
     }
   }
 }

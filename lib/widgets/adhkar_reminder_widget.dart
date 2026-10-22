@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AdhkarReminderWidget extends StatefulWidget {
-  const AdhkarReminderWidget({Key? key}) : super(key: key);
+  const AdhkarReminderWidget({super.key});
 
   @override
   State<AdhkarReminderWidget> createState() => _AdhkarReminderWidgetState();

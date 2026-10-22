@@ -1,499 +1,554 @@
+﻿import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:flutter_compass/flutter_compass.dart';
-import 'dart:math' as math;
-import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../widgets/qibla_compass_view.dart';
 
 class QiblaScreen extends StatefulWidget {
-  const QiblaScreen({Key? key}) : super(key: key);
+  const QiblaScreen({super.key});
 
   @override
   State<QiblaScreen> createState() => _QiblaScreenState();
 }
 
 class _QiblaScreenState extends State<QiblaScreen> {
-  double? _qiblaAngle;
-  double _deviceDirection = 0;
-  bool _isLoading = true;
-  String _locationStatus = 'جاري تحديد موقعك بدقة...';
-  int _selectedStyle = 0;
-  StreamSubscription<CompassEvent>? _compassSubscription;
-  double _distanceToMakkah = 0;
+  static const double _kaabaLatitude = 21.422487;
+  static const double _kaabaLongitude = 39.826206;
 
-  final List<Map<String, dynamic>> _compassStyles = [
-    {
-      'name': 'الأزرق الكلاسيكي',
-      'icon': Icons.compass_calibration,
-      'color': Colors.blue,
-      'premium': false
-    },
-    {
-      'name': 'الذهبي الفخم',
-      'icon': Icons.star,
-      'color': Colors.amber,
-      'premium': true
-    },
-    {
-      'name': 'الأخضر الإسلامي',
-      'icon': Icons.auto_awesome,
-      'color': Colors.green,
-      'premium': false
-    },
-    {
-      'name': 'الفضي العصري',
-      'icon': Icons.explore,
-      'color': Colors.grey,
-      'premium': true
-    },
-  ];
+  Timer? _recalculationTimer;
+  StreamSubscription<Position>? _positionSubscription;
+
+  double? _latitude;
+  double? _longitude;
+  double _qiblaBearing = 0;
+
+  bool _loading = true;
+  bool _usingSavedLocation = false;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _getLocationAndCalculate();
-    _startCompass();
+    _initializeQibla();
   }
 
   @override
   void dispose() {
-    _compassSubscription?.cancel();
+    _recalculationTimer?.cancel();
+    _positionSubscription?.cancel();
     super.dispose();
   }
 
-  Future<void> _getLocationAndCalculate() async {
+  Future<void> _initializeQibla() async {
+    setState(() {
+      _loading = true;
+      _errorMessage = null;
+    });
+
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        setState(() {
-          _locationStatus = 'يرجى تفعيل خدمات الموقع من إعدادات الجهاز';
-          _isLoading = false;
-        });
-        return;
+      final bool loadedSaved = await _loadSavedLocation();
+
+      if (!loadedSaved) {
+        await _loadCurrentGpsLocation();
       }
 
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          setState(() {
-            _locationStatus = 'تم رفض إذن الموقع، يرجى السماح به من الإعدادات';
-            _isLoading = false;
-          });
-          return;
-        }
+      _calculateQibla();
+
+      _positionSubscription?.cancel();
+
+      if (!_usingSavedLocation) {
+        _positionSubscription = Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 10,
+          ),
+        ).listen(
+          (Position position) {
+            if (!mounted) {
+              return;
+            }
+
+            _latitude = position.latitude;
+            _longitude = position.longitude;
+
+            _calculateQibla();
+          },
+        );
       }
 
-      if (permission == LocationPermission.deniedForever) {
-        setState(() {
-          _locationStatus = 'تم رفض إذن الموقع بشكل دائم';
-          _isLoading = false;
-        });
-        return;
-      }
-
-      Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-      double angle = _calculateQibla(position.latitude, position.longitude);
-      double distance = _calculateDistance(
-          position.latitude, position.longitude, 21.4225, 39.8262);
-
-      setState(() {
-        _qiblaAngle = angle;
-        _distanceToMakkah = distance;
-        _locationStatus = 'تم تحديد الموقع بنجاح ✅';
-        _isLoading = false;
-      });
+      _recalculationTimer?.cancel();
+      _recalculationTimer = Timer.periodic(
+        const Duration(seconds: 2),
+        (_) {
+          _calculateQibla();
+        },
+      );
     } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
       setState(() {
-        _locationStatus = 'حدث خطأ في تحديد الموقع، تأكد من اتصال الإنترنت';
-        _isLoading = false;
+        _errorMessage = 'تعذر تحديد موقعك الحالي.';
       });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
     }
   }
 
-  void _startCompass() {
-    _compassSubscription = FlutterCompass.events?.listen((CompassEvent? event) {
-      if (event != null && event.heading != null) {
-        setState(() {
-          _deviceDirection = event.heading!;
-        });
-      }
+  Future<bool> _loadSavedLocation() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    double? latitude = prefs.getDouble('prayer_latitude');
+    double? longitude = prefs.getDouble('prayer_longitude');
+
+    latitude ??= double.tryParse(
+      prefs.getString('prayer_latitude') ?? '',
+    );
+
+    longitude ??= double.tryParse(
+      prefs.getString('prayer_longitude') ?? '',
+    );
+
+    if (latitude == null || longitude == null) {
+      return false;
+    }
+
+    if (!_isValidCoordinate(latitude, longitude)) {
+      return false;
+    }
+
+    _latitude = latitude;
+    _longitude = longitude;
+    _usingSavedLocation = true;
+
+    return true;
+  }
+
+  Future<void> _loadCurrentGpsLocation() async {
+    final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+
+    if (!serviceEnabled) {
+      throw Exception('Location service disabled');
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      throw Exception('Location permission denied');
+    }
+
+    final Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+
+    _latitude = position.latitude;
+    _longitude = position.longitude;
+    _usingSavedLocation = false;
+  }
+
+  bool _isValidCoordinate(double latitude, double longitude) {
+    return latitude >= -90 &&
+        latitude <= 90 &&
+        longitude >= -180 &&
+        longitude <= 180;
+  }
+
+  void _calculateQibla() {
+    final double? latitude = _latitude;
+    final double? longitude = _longitude;
+
+    if (latitude == null || longitude == null) {
+      return;
+    }
+
+    final double lat1 = _degreesToRadians(latitude);
+    final double lat2 = _degreesToRadians(_kaabaLatitude);
+
+    final double deltaLongitude =
+        _degreesToRadians(_kaabaLongitude - longitude);
+
+    final double y = math.sin(deltaLongitude);
+    final double x = math.cos(lat1) * math.sin(lat2) -
+        math.sin(lat1) * math.cos(lat2) * math.cos(deltaLongitude);
+
+    double bearing = math.atan2(y, x);
+    bearing = _radiansToDegrees(bearing);
+
+    if (bearing < 0) {
+      bearing += 360;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _qiblaBearing = bearing;
     });
   }
 
-  double _calculateQibla(double lat, double lon) {
-    const double meccaLat = 21.4225;
-    const double meccaLon = 39.8262;
-    double phiK = meccaLat * math.pi / 180.0;
-    double lambdaK = meccaLon * math.pi / 180.0;
-    double phi = lat * math.pi / 180.0;
-    double lambda = lon * math.pi / 180.0;
-    double y = math.sin(lambdaK - lambda);
-    double x = math.cos(phi) * math.tan(phiK) -
-        math.sin(phi) * math.cos(lambdaK - lambda);
-    double qibla = math.atan2(y, x) * 180.0 / math.pi;
-    return (qibla + 360.0) % 360.0;
+  double _degreesToRadians(double degrees) {
+    return degrees * math.pi / 180;
   }
 
-  double _calculateDistance(
-      double lat1, double lon1, double lat2, double lon2) {
-    const double earthRadius = 6371;
-    double dLat = (lat2 - lat1) * math.pi / 180.0;
-    double dLon = (lon2 - lon1) * math.pi / 180.0;
-    double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.cos(lat1 * math.pi / 180.0) *
-            math.cos(lat2 * math.pi / 180.0) *
-            math.sin(dLon / 2) *
-            math.sin(dLon / 2);
-    double c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
-    return earthRadius * c;
+  double _radiansToDegrees(double radians) {
+    return radians * 180 / math.pi;
+  }
+
+  String _directionText(double bearing) {
+    if (bearing >= 337.5 || bearing < 22.5) {
+      return 'الشمال';
+    }
+    if (bearing < 67.5) {
+      return 'الشمال الشرقي';
+    }
+    if (bearing < 112.5) {
+      return 'الشرق';
+    }
+    if (bearing < 157.5) {
+      return 'الجنوب الشرقي';
+    }
+    if (bearing < 202.5) {
+      return 'الجنوب';
+    }
+    if (bearing < 247.5) {
+      return 'الجنوب الغربي';
+    }
+    if (bearing < 292.5) {
+      return 'الغرب';
+    }
+
+    return 'الشمال الغربي';
+  }
+
+  String get _locationText {
+    if (_latitude == null || _longitude == null) {
+      return 'جاري تحديد الموقع...';
+    }
+
+    return '°، '
+        '°';
   }
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF1A2332),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF009688),
-        title: const Text('اتجاه القبلة',
-            style: TextStyle(
-                fontFamily: 'Amiri',
-                fontSize: 24,
-                color: Colors.white,
-                fontWeight: FontWeight.bold)),
+        title: const Text(
+          'اتجاه القبلة',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         centerTitle: true,
-        leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-            onPressed: () => Navigator.pop(context)),
-        actions: [
-          IconButton(
-              icon: const Icon(Icons.palette, color: Colors.white),
-              tooltip: 'تغيير التصميم',
-              onPressed: _showStyleSelector),
-        ],
       ),
-      body: _isLoading
-          ? const Center(
-              child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                  CircularProgressIndicator(
-                      color: Color(0xFF009688), strokeWidth: 3),
-                  SizedBox(height: 20),
-                  Text('جاري تحديد موقعك وبدء البوصلة...',
-                      style: TextStyle(
-                          fontFamily: 'Amiri',
-                          fontSize: 18,
-                          color: Colors.white70))
-                ]))
-          : SingleChildScrollView(
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
-                    padding: const EdgeInsets.all(15),
-                    decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.2))),
-                    child: Column(
-                      children: [
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              _buildInfoCard(
-                                  'المسافة من مكة',
-                                  '${_distanceToMakkah.toStringAsFixed(1)} كم',
-                                  Icons.location_on),
-                              _buildInfoCard(
-                                  'زاوية القبلة',
-                                  '${_qiblaAngle!.toStringAsFixed(1)}°',
-                                  Icons.explore)
-                            ]),
-                        const SizedBox(height: 10),
-                        Text(_locationStatus,
-                            style: const TextStyle(
-                                fontFamily: 'Amiri',
-                                fontSize: 14,
-                                color: Colors.white70)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                  _buildInteractiveCompass(),
-                  const SizedBox(height: 30),
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
-                    padding: const EdgeInsets.all(15),
-                    decoration: BoxDecoration(
-                        color: const Color(0xFF009688).withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(
-                            color: const Color(0xFF009688)
-                                .withValues(alpha: 0.3))),
-                    child: const Row(children: [
-                      Icon(Icons.info_outline,
-                          color: Color(0xFF009688), size: 30),
-                      SizedBox(width: 15),
-                      Expanded(
-                          child: Text(
-                              'أدر هاتفك ببطء حتى تشير أيقونة الكعبة إلى الأعلى تماماً',
-                              style: TextStyle(
-                                  fontFamily: 'Amiri',
-                                  fontSize: 16,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600),
-                              textAlign: TextAlign.center))
-                    ]),
-                  ),
-                  const SizedBox(height: 30),
-                ],
-              ),
-            ),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _initializeQibla,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            children: [
+              _buildHeaderCard(isDark),
+              const SizedBox(height: 16),
+              _buildCompassCard(isDark),
+              const SizedBox(height: 16),
+              _buildInfoCard(isDark),
+              const SizedBox(height: 16),
+              _buildLocationCard(isDark),
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 16),
+                _buildErrorCard(),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildInfoCard(String title, String value, IconData icon) {
-    return Column(children: [
-      Icon(icon, color: const Color(0xFF009688), size: 30),
-      const SizedBox(height: 5),
-      Text(value,
-          style: const TextStyle(
-              fontFamily: 'Amiri',
-              fontSize: 20,
-              color: Colors.white,
-              fontWeight: FontWeight.bold)),
-      Text(title,
-          style: const TextStyle(
-              fontFamily: 'Amiri', fontSize: 12, color: Colors.white70))
-    ]);
+  Widget _buildHeaderCard(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: isDark
+              ? const [
+                  Color(0xFF173A34),
+                  Color(0xFF0F2622),
+                ]
+              : const [
+                  Color(0xFFE9FFF7),
+                  Color(0xFFD8F7EC),
+                ],
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.white.withValues(alpha: 0.85),
+            ),
+            child: const Icon(
+              Icons.explore_rounded,
+              size: 32,
+              color: Color(0xFF0A8F62),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'حدد اتجاه القبلة',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF17352D),
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  'تتجه البوصلة إلى الكعبة المشرفة من موقعك الحالي.',
+                  style: TextStyle(
+                    height: 1.4,
+                    color: isDark ? Colors.white70 : const Color(0xFF48655D),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  Widget _buildInteractiveCompass() {
-    final selectedStyle = _compassStyles[_selectedStyle];
-    final compassColor = selectedStyle['color'] as Color;
-
+  Widget _buildCompassCard(bool isDark) {
     return Container(
-      width: 320,
-      height: 320,
+      padding: const EdgeInsets.fromLTRB(12, 18, 12, 20),
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(colors: [
-          compassColor.withValues(alpha: 0.3),
-          compassColor.withValues(alpha: 0.1),
-          Colors.transparent
-        ]),
-        border: Border.all(color: compassColor, width: 4),
+        color: isDark ? const Color(0xFF111C19) : Colors.white,
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-              color: compassColor.withValues(alpha: 0.4),
-              blurRadius: 30,
-              spreadRadius: 5)
+            blurRadius: 22,
+            spreadRadius: 0,
+            offset: const Offset(0, 8),
+            color: Colors.black.withValues(
+              alpha: isDark ? 0.18 : 0.07,
+            ),
+          ),
         ],
       ),
-      child: Stack(
-        alignment: Alignment.center,
+      child: Column(
         children: [
-          const Positioned(
-              top: 15,
-              child: Text('N',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold))),
-          const Positioned(
-              bottom: 15,
-              child: Text('S',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold))),
-          const Positioned(
-              left: 20,
-              child: Text('W',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold))),
-          const Positioned(
-              right: 20,
-              child: Text('E',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold))),
-          Transform.rotate(
-            angle: ((_qiblaAngle! - _deviceDirection) * math.pi / 180),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Container(
-                  width: 35,
-                  height: 40,
-                  decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.amber, width: 2),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.amber.withValues(alpha: 0.6),
-                            blurRadius: 10,
-                            spreadRadius: 2)
-                      ]),
-                  child: const Center(
-                      child: Text('🕋', style: TextStyle(fontSize: 18)))),
-              Container(
-                  width: 3,
-                  height: 80,
-                  decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [
-                    Colors.amber,
-                    Colors.amber.withValues(alpha: 0.2)
-                  ], begin: Alignment.topCenter, end: Alignment.bottomCenter))),
-            ]),
+          Text(
+            'البوصلة',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : const Color(0xFF20342F),
+            ),
           ),
-          Transform.rotate(
-            angle: -_deviceDirection * math.pi / 180,
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.north, color: compassColor, size: 40),
-              Container(
-                  width: 3,
-                  height: 100,
-                  decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [
-                    compassColor,
-                    compassColor.withValues(alpha: 0.2)
-                  ], begin: Alignment.topCenter, end: Alignment.bottomCenter))),
-            ]),
+          const SizedBox(height: 8),
+          if (_loading)
+            const SizedBox(
+              height: 350,
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else
+            QiblaCompassView(
+              qiblaBearing: _qiblaBearing,
+              isDark: isDark,
+              size: 350,
+            ),
+          const SizedBox(height: 6),
+          Text(
+                '°',
+            style: TextStyle(
+              fontSize: 30,
+              fontWeight: FontWeight.w800,
+              color: isDark ? Colors.white : const Color(0xFF17352D),
+            ),
           ),
-          Container(
-              width: 16,
-              height: 16,
-              decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: compassColor, width: 3),
-                  boxShadow: [
-                    BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        blurRadius: 5)
-                  ])),
+          const SizedBox(height: 4),
+          Text(
+            _directionText(_qiblaBearing),
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white70 : const Color(0xFF62746F),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  void _showStyleSelector() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1A2332),
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
+  Widget _buildInfoCard(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF111C19) : Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.06)
+              : const Color(0xFFE4ECE9),
+        ),
+      ),
+      child: Row(
+        children: [
           Container(
-              width: 50,
-              height: 5,
-              decoration: BoxDecoration(
-                  color: Colors.white38,
-                  borderRadius: BorderRadius.circular(3))),
-          const SizedBox(height: 20),
-          const Text('اختر تصميم البوصلة',
-              style: TextStyle(
-                  fontFamily: 'Amiri',
-                  fontSize: 22,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold)),
-          const SizedBox(height: 20),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 15,
-                mainAxisSpacing: 15,
-                childAspectRatio: 1),
-            itemCount: _compassStyles.length,
-            itemBuilder: (context, index) {
-              final style = _compassStyles[index];
-              final isSelected = _selectedStyle == index;
-              return GestureDetector(
-                onTap: style['premium'] as bool
-                    ? () => _showPremiumDialog()
-                    : () {
-                        setState(() => _selectedStyle = index);
-                        Navigator.pop(context);
-                      },
-                child: Container(
-                  decoration: BoxDecoration(
-                      color: (style['color'] as Color).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(15),
-                      border: Border.all(
-                          color: isSelected
-                              ? style['color'] as Color
-                              : Colors.white24,
-                          width: isSelected ? 3 : 2)),
-                  child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(style['icon'] as IconData,
-                            size: 50, color: style['color'] as Color),
-                        const SizedBox(height: 10),
-                        Text(style['name'] as String,
-                            style: TextStyle(
-                                fontFamily: 'Amiri',
-                                fontSize: 14,
-                                color: isSelected
-                                    ? style['color'] as Color
-                                    : Colors.white,
-                                fontWeight: FontWeight.bold)),
-                        if (style['premium'] as bool)
-                          Container(
-                              margin: const EdgeInsets.only(top: 5),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                  color: Colors.amber,
-                                  borderRadius: BorderRadius.circular(10)),
-                              child: const Text('مميز',
-                                  style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold))),
-                      ]),
-                ),
-              );
-            },
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0A8F62).withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.sync_rounded,
+              color: Color(0xFF0A8F62),
+            ),
           ),
-        ]),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              'يتم إعادة حساب زاوية القبلة كل ثانيتين مع تحديث الموقع عند تحركك.',
+              style: TextStyle(
+                height: 1.5,
+                color: isDark ? Colors.white70 : const Color(0xFF526761),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  void _showPremiumDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A2332),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: Color(0xFF009688))),
-        title: const Text('تصميم مميز',
+  Widget _buildLocationCard(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF111C19) : Colors.white,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.location_on_rounded,
+                color: Color(0xFF0A8F62),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'موقعك',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF20342F),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            _locationText,
             style: TextStyle(
-                fontFamily: 'Amiri',
-                color: Color(0xFF009688),
-                fontWeight: FontWeight.bold)),
-        content: const Text(
-            'هذا التصميم متاح حالياً في النسخة المميزة من التطبيق.',
-            style: TextStyle(fontFamily: 'Amiri', color: Colors.white70)),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('حسناً',
-                  style: TextStyle(color: Colors.white, fontFamily: 'Amiri')))
+              color: isDark ? Colors.white70 : const Color(0xFF64756F),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                _usingSavedLocation
+                    ? Icons.bookmark_rounded
+                    : Icons.gps_fixed_rounded,
+                size: 18,
+                color: const Color(0xFF0A8F62),
+              ),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  _usingSavedLocation
+                      ? 'الموقع المحفوظ من إعدادات مواقيت الصلاة'
+                      : 'الموقع الحالي عبر GPS',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? Colors.white60 : const Color(0xFF7A8A85),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.red.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.warning_amber_rounded,
+            color: Colors.red,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _errorMessage!,
+              style: const TextStyle(
+                color: Colors.red,
+                height: 1.4,
+              ),
+            ),
+          ),
+          IconButton(
+            onPressed: _initializeQibla,
+            icon: const Icon(
+              Icons.refresh_rounded,
+              color: Colors.red,
+            ),
+          ),
         ],
       ),
     );
   }
 }
+
+
+

@@ -44,3 +44,40 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 google-services.json
+
+# Signing files and private configuration
+/android/app/agconnect-services.json
+/android/app/upload_certificate.pem
+**/key.properties
+**/*.jks
+**/*.keystore
+**/*.p12
+**/*.pfx
+**/*.pem
+**/*.p8
+**/*.mobileprovision
+**/AuthKey_*.p8
+**/GoogleService-Info.plist
+**/google-services.json
+**/service-account*.json
+.env
+.env.*
+!.env.example
+# Build outputs, dumps, backups and local diagnostics
+/android/build/
+/android/app/build/
+*.apk
+*.aab
+*.hprof
+*.backup
+*.bak
+*.before_*
+*.pre_*
+*.apk_success
+/backups/
+/project_tree.txt
+/deps.txt
+/lib/screens/test_prayer_screen.dart
+
+# Ignore Huawei Gradle backup files
+*.kts.huawei-step2-backup

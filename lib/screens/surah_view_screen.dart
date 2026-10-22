@@ -1,56 +1,43 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:quran/quran.dart' as quran;
+
 import '../services/bookmark_manager.dart';
 
 class SurahViewScreen extends StatefulWidget {
   final int surahNumber;
-  final int? initialAyah;
+  final int? scrollToAyah;
 
   const SurahViewScreen({
-    Key? key,
+    super.key,
     required this.surahNumber,
-    this.initialAyah,
-  }) : super(key: key);
+    this.scrollToAyah,
+  });
 
   @override
   State<SurahViewScreen> createState() => _SurahViewScreenState();
 }
 
 class _SurahViewScreenState extends State<SurahViewScreen> {
-  double _fontSize = 26.0;
-  final ScrollController _scrollController = ScrollController();
-  final Map<int, GlobalKey> _verseKeys = {};
+  final Set<int> _bookmarkedAyahs = <int>{};
 
-  String _toArabicNumber(int number) {
-    const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-    return number
-        .toString()
-        .split('')
-        .map((c) => arabicNumbers[int.parse(c)])
-        .join();
-  }
+  final ScrollController _scrollController = ScrollController();
+
+  final Map<int, GlobalKey> _ayahKeys = <int, GlobalKey>{};
+
+  bool _isLoading = true;
+  bool _isBookmarkLoading = false;
+
+  static const Color _backgroundColor = Color(0xFF0A201A);
+  static const Color _appBarColor = Color(0xFF1B342B);
+  static const Color _cardColor = Color(0xFF132A22);
+  static const Color _goldColor = Color(0xFFC9B896);
+  static const Color _bookmarkColor = Color(0xFFD4AF37);
+  static const Color _textColor = Color(0xFFF0E0B5);
 
   @override
   void initState() {
     super.initState();
-    _scrollToInitialAyah();
-  }
-
-  void _scrollToInitialAyah() {
-    if (widget.initialAyah != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final key = _verseKeys[widget.initialAyah];
-        if (key != null && key.currentContext != null) {
-          Scrollable.ensureVisible(
-            key.currentContext!,
-            duration: const Duration(milliseconds: 800),
-            curve: Curves.easeInOut,
-            alignment: 0.1,
-          );
-        }
-      });
-    }
+    _loadBookmarks();
   }
 
   @override
@@ -59,299 +46,410 @@ class _SurahViewScreenState extends State<SurahViewScreen> {
     super.dispose();
   }
 
-  Future<void> _saveBookmark(int ayahNumber) async {
-    String surahName = quran.getSurahNameArabic(widget.surahNumber);
+  GlobalKey _getAyahKey(int ayahNumber) {
+    return _ayahKeys.putIfAbsent(
+      ayahNumber,
+      GlobalKey.new,
+    );
+  }
 
-    final bookmark = BookmarkManager.createBookmark(
-      surahNumber: widget.surahNumber,
-      ayahNumber: ayahNumber,
-      surahName: surahName,
+  Future<void> _loadBookmarks() async {
+    try {
+      final bookmarks = await BookmarkManager.getBookmarks();
+
+      if (!mounted) return;
+
+      final loadedBookmarks = <int>{};
+
+      for (final bookmark in bookmarks) {
+        final bookmarkSurah = bookmark['surahNumber'];
+        final bookmarkAyah = bookmark['ayahNumber'];
+
+        final surahNumber = bookmarkSurah is num
+            ? bookmarkSurah.toInt()
+            : int.tryParse(bookmarkSurah?.toString() ?? '');
+
+        final ayahNumber = bookmarkAyah is num
+            ? bookmarkAyah.toInt()
+            : int.tryParse(bookmarkAyah?.toString() ?? '');
+
+        if (surahNumber == widget.surahNumber && ayahNumber != null) {
+          loadedBookmarks.add(ayahNumber);
+        }
+      }
+
+      setState(() {
+        _bookmarkedAyahs
+          ..clear()
+          ..addAll(loadedBookmarks);
+
+        _isLoading = false;
+      });
+
+      if (widget.scrollToAyah != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _scrollToAyah(widget.scrollToAyah!);
+          }
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      _showMessage(
+        'حدث خطأ أثناء تحميل الإشارات المرجعية',
+        isError: true,
+      );
+    }
+  }
+
+  Future<void> _scrollToAyah(int ayahNumber) async {
+    if (!_scrollController.hasClients) return;
+
+    final ayahCount = quran.getVerseCount(widget.surahNumber);
+
+    if (ayahCount <= 0) return;
+
+    final safeAyahNumber = ayahNumber.clamp(1, ayahCount);
+
+    final key = _getAyahKey(safeAyahNumber);
+    final targetContext = key.currentContext;
+
+    if (targetContext != null) {
+      await Scrollable.ensureVisible(
+        targetContext,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeInOut,
+        alignment: 0.15,
+      );
+      return;
+    }
+
+    // في حال لم يتم إنشاء الـ widget المطلوب بعد،
+    // نستخدم تقديراً تقريبياً للوصول إلى المنطقة المطلوبة.
+    final estimatedOffset = (safeAyahNumber - 1) * 180.0;
+
+    final maxScroll = _scrollController.position.maxScrollExtent;
+
+    final targetOffset = estimatedOffset.clamp(
+      0.0,
+      maxScroll,
     );
 
-    final success = await BookmarkManager.addBookmark(bookmark);
+    await _scrollController.animateTo(
+      targetOffset,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
 
-    if (mounted) {
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.bookmark, color: Colors.white),
-                const SizedBox(width: 10),
-                Text(
-                  'تم حفظ العلامة: سورة $surahName - آية ${_toArabicNumber(ayahNumber)}',
-                  style: const TextStyle(fontFamily: 'Amiri'),
-                ),
-              ],
-            ),
-            backgroundColor: const Color(0xFFD4AF37),
-            duration: const Duration(seconds: 3),
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(16),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
+    // نحاول مرة أخرى بعد اكتمال عملية التمرير.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final context = key.currentContext;
+
+      if (context != null) {
+        Scrollable.ensureVisible(
+          context,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+          alignment: 0.15,
+        );
+      }
+    });
+  }
+
+  Future<void> _toggleBookmark(int ayahNumber) async {
+    if (_isBookmarkLoading) return;
+
+    final surahName = quran.getSurahName(widget.surahNumber);
+    final ayahText = quran.getVerse(
+      widget.surahNumber,
+      ayahNumber,
+    );
+
+    final isCurrentlyBookmarked = _bookmarkedAyahs.contains(ayahNumber);
+
+    setState(() {
+      _isBookmarkLoading = true;
+    });
+
+    try {
+      if (isCurrentlyBookmarked) {
+        await BookmarkManager.removeBookmark(
+          surahNumber: widget.surahNumber,
+          ayahNumber: ayahNumber,
+        );
+
+        if (!mounted) return;
+
+        setState(() {
+          _bookmarkedAyahs.remove(ayahNumber);
+        });
+
+        _showMessage(
+          'تم حذف الإشارة المرجعية',
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'عذراً، الحد الأقصى للعلامات المرجعية هو 10 فقط',
-              style: TextStyle(fontFamily: 'Amiri'),
-            ),
-            backgroundColor: Colors.redAccent,
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(16),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
+        await BookmarkManager.addBookmark(
+          surahName: surahName,
+          surahNumber: widget.surahNumber,
+          ayahNumber: ayahNumber,
+          ayahText: ayahText,
         );
+
+        if (!mounted) return;
+
+        setState(() {
+          _bookmarkedAyahs.add(ayahNumber);
+        });
+
+        _showMessage(
+          'تم حفظ الإشارة للآية ${_toArabicNumber(ayahNumber)}',
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      _showMessage(
+        'عذراً، حدث خطأ أثناء حفظ الإشارة المرجعية',
+        isError: true,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isBookmarkLoading = false;
+        });
       }
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    int totalVerses = quran.getVerseCount(widget.surahNumber);
-    String surahName = quran.getSurahNameArabic(widget.surahNumber);
+  void _showMessage(
+    String message, {
+    bool isError = false,
+  }) {
+    if (!mounted) return;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D1B2A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1F3A),
-        elevation: 2,
-        centerTitle: true,
-        // زر الرجوع باللون الذهبي
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFFD4AF37)),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'سورة $surahName',
-          style: const TextStyle(
-            fontFamily: 'Amiri',
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFFD4AF37),
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add, color: Color(0xFFD4AF37)),
-            onPressed: () =>
-                setState(() => _fontSize = (_fontSize + 2).clamp(20.0, 45.0)),
-          ),
-          IconButton(
-            icon: const Icon(Icons.remove, color: Color(0xFFD4AF37)),
-            onPressed: () =>
-                setState(() => _fontSize = (_fontSize - 2).clamp(20.0, 45.0)),
-          ),
-        ],
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/bg_quran.jpg'),
-            fit: BoxFit.cover,
-          ),
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.black.withOpacity(0.3),
-                Colors.black.withOpacity(0.5),
-              ],
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            message,
+            textDirection: TextDirection.rtl,
+            style: const TextStyle(
+              fontFamily: 'Amiri',
+              fontSize: 15,
             ),
           ),
-          child: SafeArea(
-            child: Container(
-              margin: const EdgeInsets.all(12.0),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFD4AF37), width: 3),
-                color: const Color(0xFF162447).withOpacity(0.4),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFD4AF37).withOpacity(0.2),
-                    blurRadius: 15,
-                    spreadRadius: 2,
+          backgroundColor: isError ? Colors.redAccent : _appBarColor,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+  }
+
+  String _toArabicNumber(int number) {
+    const arabicNumbers = <String>[
+      '٠',
+      '١',
+      '٢',
+      '٣',
+      '٤',
+      '٥',
+      '٦',
+      '٧',
+      '٨',
+      '٩',
+    ];
+
+    return number
+        .toString()
+        .split('')
+        .map(
+          (digit) => arabicNumbers[int.parse(digit)],
+        )
+        .join();
+  }
+
+  Widget _buildAyahCard({
+    required int ayahNumber,
+    required String ayahText,
+  }) {
+    final isBookmarked = _bookmarkedAyahs.contains(ayahNumber);
+
+    return Card(
+      key: _getAyahKey(ayahNumber),
+      color: _cardColor,
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+        side: BorderSide(
+          color: isBookmarked
+              ? _bookmarkColor
+              : _goldColor.withValues(alpha: 0.30),
+          width: isBookmarked ? 2 : 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
                   ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(17),
-                child: Container(
                   decoration: BoxDecoration(
-                    border: Border.all(
-                        color: const Color(0xFFD4AF37).withOpacity(0.3),
-                        width: 1),
-                    image: const DecorationImage(
-                      image: AssetImage('assets/images/quran_pattern.png'),
-                      opacity: 0.05,
-                      fit: BoxFit.cover,
+                    color: _goldColor.withValues(
+                      alpha: 0.15,
                     ),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: SingleChildScrollView(
-                    controller: _scrollController,
-                    physics: const BouncingScrollPhysics(),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        children: [
-                          // عنوان السورة المزخرف
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(vertical: 15),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1A1F3A),
-                              borderRadius: BorderRadius.circular(15),
-                              border: Border.all(
-                                  color:
-                                      const Color(0xFFD4AF37).withOpacity(0.6),
-                                  width: 1.5),
-                            ),
-                            child: Text(
-                              surahName,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontFamily: 'Amiri',
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFD4AF37),
-                                letterSpacing: 1,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 25),
-
-                          // البسملة
-                          if (widget.surahNumber != 9)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 25),
-                              child: Container(
-                                padding: const EdgeInsets.all(15),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                      color: const Color(0xFFD4AF37)
-                                          .withValues(alpha: 0.4)),
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                                child: Text(
-                                  'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontFamily: 'Amiri',
-                                    fontSize: _fontSize + 2,
-                                    fontWeight: FontWeight.bold,
-                                    color: const Color(0xFFD4AF37),
-                                    letterSpacing: 1,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                          // الآيات مع إمكانية الضغط المطول
-                          _buildVersesWithLongPress(totalVerses),
-
-                          const SizedBox(height: 30),
-                          Icon(
-                            Icons.hexagon,
-                            color: const Color(0xFFD4AF37).withOpacity(0.3),
-                            size: 30,
-                          ),
-                          const SizedBox(height: 20),
-                        ],
-                      ),
+                  child: Text(
+                    'آية ${_toArabicNumber(ayahNumber)}',
+                    textDirection: TextDirection.rtl,
+                    style: const TextStyle(
+                      fontFamily: 'Amiri',
+                      color: _goldColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
+                IconButton(
+                  tooltip: isBookmarked
+                      ? 'حذف الإشارة المرجعية'
+                      : 'حفظ الإشارة المرجعية',
+                  onPressed: _isBookmarkLoading
+                      ? null
+                      : () => _toggleBookmark(
+                            ayahNumber,
+                          ),
+                  icon: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                      key: ValueKey<bool>(
+                        isBookmarked,
+                      ),
+                      color: isBookmarked ? _bookmarkColor : _goldColor,
+                      size: 28,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              ayahText,
+              textAlign: TextAlign.right,
+              textDirection: TextDirection.rtl,
+              style: const TextStyle(
+                fontFamily: 'Amiri',
+                color: _textColor,
+                fontSize: 20,
+                height: 1.8,
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  // ═══════════════ بناء الآيات مع الضغط المطول ═══════════════
-  Widget _buildVersesWithLongPress(int totalVerses) {
-    List<Widget> verseWidgets = [];
+  Widget _buildLoading() {
+    return const Center(
+      child: CircularProgressIndicator(
+        color: _goldColor,
+      ),
+    );
+  }
 
-    for (int i = 1; i <= totalVerses; i++) {
-      String verseText = quran.getVerse(
-        widget.surahNumber,
-        i,
-        verseEndSymbol: false,
-      );
+  Widget _buildAyahs() {
+    final ayahCount = quran.getVerseCount(widget.surahNumber);
 
-      // إنشاء مفتاح فريد لكل آية للتمرير إليها
-      final verseKey = GlobalKey();
-      _verseKeys[i] = verseKey;
+    return ListView.builder(
+      controller: _scrollController,
+      padding: const EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        32,
+      ),
+      physics: const BouncingScrollPhysics(),
+      itemCount: ayahCount,
+      itemBuilder: (context, index) {
+        final ayahNumber = index + 1;
 
-      verseWidgets.add(
-        KeyedSubtree(
-          key: verseKey,
-          child: GestureDetector(
-            onLongPress: () {
-              HapticFeedback.mediumImpact();
-              _saveBookmark(i);
-            },
-            child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 2),
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                textDirection: TextDirection.rtl,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Text(
-                      verseText,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: 'Amiri',
-                        fontSize: _fontSize,
-                        height: 2.6,
-                        color: Colors.white,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                          color: const Color(0xFFD4AF37), width: 1.5),
-                      color: const Color(0xFFD4AF37).withOpacity(0.15),
-                    ),
-                    child: Text(
-                      _toArabicNumber(i),
-                      style: const TextStyle(
-                        fontFamily: 'Amiri',
-                        fontSize: 16,
-                        color: Color(0xFFD4AF37),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+        final ayahText = quran.getVerse(
+          widget.surahNumber,
+          ayahNumber,
+        );
+
+        return _buildAyahCard(
+          ayahNumber: ayahNumber,
+          ayahText: ayahText,
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final surahName = quran.getSurahName(widget.surahNumber);
+
+    return Scaffold(
+      backgroundColor: _backgroundColor,
+      appBar: AppBar(
+        backgroundColor: _appBarColor,
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          surahName,
+          textDirection: TextDirection.rtl,
+          style: const TextStyle(
+            fontFamily: 'Amiri',
+            color: _goldColor,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
           ),
         ),
-      );
-    }
-
-    return Column(
-      children: verseWidgets,
+        leading: IconButton(
+          tooltip: 'رجوع',
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: _goldColor,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.home_rounded,
+              color: _goldColor,
+            ),
+            onPressed: () => Navigator.of(context).popUntil(
+              (route) => route.isFirst,
+            ),
+          ),
+        ],
+      ),
+      body: _isLoading ? _buildLoading() : _buildAyahs(),
     );
   }
 }

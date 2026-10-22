@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class RuqyahScreen extends StatelessWidget {
-  const RuqyahScreen({Key? key}) : super(key: key);
+  const RuqyahScreen({super.key});
 
   final List<Map<String, dynamic>> _ruqyah = const [
     {
@@ -86,8 +86,8 @@ class RuqyahScreen extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Colors.black.withOpacity(0.3),
-                Colors.black.withOpacity(0.6),
+                Colors.black.withValues(alpha: 0.3),
+                Colors.black.withValues(alpha: 0.6),
               ],
             ),
           ),
@@ -111,6 +111,17 @@ class RuqyahScreen extends StatelessWidget {
                     icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
                     onPressed: () => Navigator.pop(context),
                   ),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.home_rounded,
+                        color: Colors.white,
+                      ),
+                      onPressed: () => Navigator.of(context).popUntil(
+                        (route) => route.isFirst,
+                      ),
+                    ),
+                  ],
                 ),
                 Expanded(
                   child: ListView.builder(
@@ -128,10 +139,11 @@ class RuqyahScreen extends StatelessWidget {
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
+                          color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(15),
                           border: Border.all(
-                              color: primaryColor.withOpacity(0.5), width: 2),
+                              color: primaryColor.withValues(alpha: 0.5),
+                              width: 2),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,8 +170,8 @@ class RuqyahScreen extends StatelessWidget {
                                           style: TextStyle(
                                             fontFamily: 'Amiri',
                                             fontSize: 12,
-                                            color:
-                                                Colors.white.withOpacity(0.7),
+                                            color: Colors.white
+                                                .withValues(alpha: 0.7),
                                             fontStyle: FontStyle.italic,
                                           ),
                                         ),
@@ -210,10 +222,11 @@ class RuqyahScreen extends StatelessWidget {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: primaryColor.withOpacity(0.2),
+                                  color: primaryColor.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                      color: primaryColor.withOpacity(0.5)),
+                                      color:
+                                          primaryColor.withValues(alpha: 0.5)),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,

@@ -1,77 +1,125 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    
+
+    <!-- ========================================================= -->
+    <!-- BASIC -->
+    <!-- ========================================================= -->
+
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- ========================================================= -->
+    <!-- LOCATION / QIBLA / PRAYER TIMES -->
+    <!-- ========================================================= -->
+
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- ========================================================= -->
+    <!-- NOTIFICATIONS -->
+    <!-- ========================================================= -->
+
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- ========================================================= -->
+    <!-- EXACT ALARMS -->
+    <!-- ========================================================= -->
+
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
-    <uses-permission android:name="android.permission.VIBRATE" />
-    
+
+    <!-- ========================================================= -->
+    <!-- FULL SCREEN -->
+    <!-- ========================================================= -->
+
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+
+    <!-- ========================================================= -->
+    <!-- POWER -->
+    <!-- ========================================================= -->
+
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
     <application
-        android:label="تطبيق تسبيحة"
         android:name="${applicationName}"
+        android:label="تطبيق تسبيحة"
         android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:supportsRtl="true"
         android:enableOnBackInvokedCallback="true">
-        
+
+        <!-- ===================================================== -->
+        <!-- MAIN ACTIVITY -->
+        <!-- ===================================================== -->
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
-            android:taskAffinity=""
             android:theme="@style/LaunchTheme"
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize"
             android:showWhenLocked="true"
-            android:turnScreenOn="true">
-            
-            <meta-data android:name="io.flutter.embedding.android.NormalTheme" android:resource="@style/NormalTheme" />
-            
+            android:turnScreenOn="true"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode">
+
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme" />
+
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
         </activity>
-        
-        <!-- ✅ مستقبل إعادة التشغيل للإشعارات المحلية فقط -->
+
+        <!-- ===================================================== -->
+        <!-- FLUTTER LOCAL NOTIFICATIONS -->
+        <!-- ===================================================== -->
+
         <receiver
-            android:name="com.dexterous.flutterlocalnotifications.scheduled.ScheduledNotificationBootReceiver"
-            android:exported="false">
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
                 <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
             </intent-filter>
+
         </receiver>
-        
-        <receiver
-            android:name="com.dexterous.flutterlocalnotifications.scheduled.ScheduledNotificationReceiver"
-            android:exported="false" />
-        
-        <meta-data
-            android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="prayer_times_channel" />
-        
+
+        <!-- ===================================================== -->
+        <!-- FLUTTER EMBEDDING -->
+        <!-- ===================================================== -->
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-            
+
     </application>
-    
+
+    <!-- ========================================================= -->
+    <!-- QUERIES -->
+    <!-- ========================================================= -->
+
     <queries>
+
         <intent>
-            <action android:name="android.intent.action.PROCESS_TEXT"/>
-            <data android:mimeType="text/plain"/>
+            <action android:name="android.intent.action.PROCESS_TEXT" />
+            <data android:mimeType="text/plain" />
         </intent>
+
         <intent>
-            <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="https" />
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="mailto" />
         </intent>
+
     </queries>
-    
+
 </manifest>

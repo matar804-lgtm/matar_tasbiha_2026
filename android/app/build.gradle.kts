@@ -1,4 +1,4 @@
-import java.util.Properties
+﻿import java.util.Properties
 import java.io.FileInputStream
 
 plugins {
@@ -11,7 +11,7 @@ plugins {
 
 android {
     namespace = "com.appnest.tasbiha"
-    
+
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
@@ -21,59 +21,80 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
     defaultConfig {
         applicationId = "com.appnest.tasbiha"
-        minSdk = flutter.minSdkVersion
+
+        minSdk = 26
         targetSdk = 36
+
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // تفعيل MultiDex للتعامل مع عدد كبير من مكتبات التطبيق.
+        multiDexEnabled = true
     }
 
     val keystorePropertiesFile = rootProject.file("key.properties")
+    val keystoreProperties = Properties()
+
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(
+            FileInputStream(keystorePropertiesFile)
+        )
+    }
 
     signingConfigs {
         create("release") {
             if (keystorePropertiesFile.exists()) {
-                val keystoreProperties = Properties()
-                keystoreProperties.load(FileInputStream(keystorePropertiesFile))
-
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                    ?: throw GradleException("keyAlias غير موجود")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
-                    ?: throw GradleException("keyPassword غير موجود")
-                storeFile = file(keystoreProperties.getProperty("storeFile")
-                    ?: throw GradleException("storeFile غير موجود"))
-                storePassword = keystoreProperties.getProperty("storePassword")
-                    ?: throw GradleException("storePassword غير موجود")
-            } else {
-                throw GradleException("ملف key.properties غير موجود")
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
             }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (keystorePropertiesFile.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
+
             isMinifyEnabled = false
             isShrinkResources = false
+
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
+                getDefaultProguardFile(
+                    "proguard-android-optimize.txt"
+                ),
                 "proguard-rules.pro"
             )
         }
     }
-}
 
-kotlin {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    // تقليل استهلاك الذاكرة والضغط أثناء عملية بناء APK.
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
     }
-}
-
-dependencies {
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    coreLibraryDesugaring(
+        "com.android.tools:desugar_jdk_libs:2.0.4"
+    )
+
+    // مطلوب عند تفعيل MultiDex.
+    implementation("androidx.multidex:multidex:2.0.1")
 }

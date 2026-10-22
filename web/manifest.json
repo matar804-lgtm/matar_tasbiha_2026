@@ -1,14 +1,20 @@
 {
-  "name": "تطبيق تسبيحة",
+  "name": "تطبيق تسبيحة الإسلامي",
   "short_name": "تسبيحة",
-  "description": "تطبيق إسلامي شامل - أذكار، أدعية، قرآن كريم، واتجاه القبلة",
-  "start_url": ".",
+  "description": "تطبيق إسلامي شامل للأذكار والأدعية والقرآن الكريم ومواقيت الصلاة واتجاه القبلة",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#009688",
-  "theme_color": "#009688",
   "orientation": "portrait",
+  "background_color": "#0A201A",
+  "theme_color": "#1B5E20",
   "lang": "ar",
   "dir": "rtl",
+  "categories": [
+    "lifestyle",
+    "education",
+    "religion"
+  ],
   "icons": [
     {
       "src": "icons/icon-192.png",
@@ -19,6 +25,12 @@
       "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
     }
   ]
 }

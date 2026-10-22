@@ -4,7 +4,7 @@ import '../data/adhkar_data.dart';
 import 'adhkar_detail_screen.dart'; // تأكد أن هذا الملف موجود باسم adhkar_detail_screen.dart أو dua_detail_screen.dart
 
 class AmaniScreen extends StatefulWidget {
-  const AmaniScreen({Key? key}) : super(key: key);
+  const AmaniScreen({super.key});
 
   @override
   State<AmaniScreen> createState() => _AmaniScreenState();
@@ -52,6 +52,17 @@ class _AmaniScreenState extends State<AmaniScreen>
           icon: const Icon(Icons.arrow_back_ios, color: Color(0xFFD4AF37)),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.home_rounded,
+              color: Color(0xFFD4AF37),
+            ),
+            onPressed: () => Navigator.of(context).popUntil(
+              (route) => route.isFirst,
+            ),
+          ),
+        ],
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -114,18 +125,18 @@ class _AmaniScreenState extends State<AmaniScreen>
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              cardColor.withOpacity(0.85),
-                              cardColor.withOpacity(0.65),
+                              cardColor.withValues(alpha: 0.85),
+                              cardColor.withValues(alpha: 0.65),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: accentColor.withOpacity(0.6),
+                            color: accentColor.withValues(alpha: 0.6),
                             width: 2,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: cardColor.withOpacity(0.4),
+                              color: cardColor.withValues(alpha: 0.4),
                               blurRadius: 15,
                               offset: const Offset(0, 5),
                             ),
@@ -143,7 +154,7 @@ class _AmaniScreenState extends State<AmaniScreen>
                                 borderRadius: BorderRadius.circular(15),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: accentColor.withOpacity(0.4),
+                                    color: accentColor.withValues(alpha: 0.4),
                                     blurRadius: 10,
                                     offset: const Offset(0, 3),
                                   ),
@@ -185,7 +196,7 @@ class _AmaniScreenState extends State<AmaniScreen>
                             ),
                             Icon(
                               Icons.arrow_forward_ios,
-                              color: accentColor.withOpacity(0.8),
+                              color: accentColor.withValues(alpha: 0.8),
                               size: 18,
                             ),
                           ],

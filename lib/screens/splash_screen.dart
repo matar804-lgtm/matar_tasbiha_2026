@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -70,12 +70,12 @@ class _SplashScreenState extends State<SplashScreen>
                       height: 120,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0xFF1A2332).withOpacity(0.9),
+                        color: const Color(0xFF1A2332).withValues(alpha: 0.9),
                         border: Border.all(
                             color: const Color(0xFFD4AF37), width: 3),
                         boxShadow: [
                           BoxShadow(
-                              color: const Color(0xFFD4AF37).withOpacity(0.6),
+                              color: const Color(0xFFD4AF37).withValues(alpha: 0.6),
                               blurRadius: 25,
                               spreadRadius: 5)
                         ],
@@ -112,7 +112,7 @@ class _SplashScreenState extends State<SplashScreen>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 20, vertical: 20),
                       decoration: BoxDecoration(
-                          color: const Color(0xFF0A0F1A).withOpacity(0.6),
+                          color: const Color(0xFF0A0F1A).withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                               color: const Color(0xFFD4AF37), width: 2)),
@@ -195,7 +195,7 @@ class _SplashScreenState extends State<SplashScreen>
                             boxShadow: [
                               BoxShadow(
                                   color:
-                                      const Color(0xFFFFD700).withOpacity(0.6),
+                                      const Color(0xFFFFD700).withValues(alpha: 0.6),
                                   blurRadius: 20,
                                   spreadRadius: 3)
                             ]),
@@ -229,10 +229,10 @@ class _SplashScreenState extends State<SplashScreen>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 20, vertical: 15),
                       decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.4),
+                          color: Colors.black.withValues(alpha: 0.4),
                           borderRadius: BorderRadius.circular(15),
                           border: Border.all(
-                              color: const Color(0xFFD4AF37).withOpacity(0.3),
+                              color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
                               width: 1)),
                       child: const Column(
                         children: [

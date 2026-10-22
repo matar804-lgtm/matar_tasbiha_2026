@@ -4,7 +4,7 @@ import '../data/mujarrabat_duas_data.dart';
 import 'surah_detail_screen.dart';
 
 class MujarrabatDuasScreen extends StatefulWidget {
-  const MujarrabatDuasScreen({Key? key}) : super(key: key);
+  const MujarrabatDuasScreen({super.key});
 
   @override
   State<MujarrabatDuasScreen> createState() => _MujarrabatDuasScreenState();
@@ -37,8 +37,8 @@ class _MujarrabatDuasScreenState extends State<MujarrabatDuasScreen> {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Colors.black.withOpacity(0.4),
-                Colors.black.withOpacity(0.7),
+                Colors.black.withValues(alpha: 0.4),
+                Colors.black.withValues(alpha: 0.7),
               ],
             ),
           ),
@@ -95,13 +95,13 @@ class _MujarrabatDuasScreenState extends State<MujarrabatDuasScreen> {
                               horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? const Color(0xFFD4AF37).withOpacity(0.3)
-                                : Colors.white.withOpacity(0.1),
+                                ? const Color(0xFFD4AF37).withValues(alpha: 0.3)
+                                : Colors.white.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: isSelected
                                   ? const Color(0xFFD4AF37)
-                                  : Colors.white.withOpacity(0.3),
+                                  : Colors.white.withValues(alpha: 0.3),
                               width: isSelected ? 2 : 1,
                             ),
                           ),
@@ -183,14 +183,14 @@ class _MujarrabatDuasScreenState extends State<MujarrabatDuasScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  const Color(0xFF2E7D32).withOpacity(0.35),
-                  const Color(0xFF4CAF50).withOpacity(0.15)
+                  const Color(0xFF2E7D32).withValues(alpha: 0.35),
+                  const Color(0xFF4CAF50).withValues(alpha: 0.15)
                 ]),
             borderRadius: BorderRadius.circular(15),
             border: Border.all(color: const Color(0xFF4CAF50), width: 2),
             boxShadow: [
               BoxShadow(
-                  color: const Color(0xFF4CAF50).withOpacity(0.3),
+                  color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
                   blurRadius: 15,
                   offset: const Offset(0, 5))
             ],
@@ -203,7 +203,7 @@ class _MujarrabatDuasScreenState extends State<MujarrabatDuasScreen> {
                   Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                          color: const Color(0xFF4CAF50).withOpacity(0.3),
+                          color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(12)),
                       child: const Icon(Icons.menu_book,
                           color: Color(0xFF4CAF50), size: 30)),
@@ -223,7 +223,7 @@ class _MujarrabatDuasScreenState extends State<MujarrabatDuasScreen> {
                             style: TextStyle(
                                 fontFamily: 'Amiri',
                                 fontSize: 13,
-                                color: Colors.white.withOpacity(0.7))),
+                                color: Colors.white.withValues(alpha: 0.7))),
                       ],
                     ),
                   ),
@@ -285,14 +285,14 @@ class _MujarrabatDuasScreenState extends State<MujarrabatDuasScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF4CAF50).withOpacity(0.2),
-              const Color(0xFF4CAF50).withOpacity(0.05)
+              const Color(0xFF4CAF50).withValues(alpha: 0.2),
+              const Color(0xFF4CAF50).withValues(alpha: 0.05)
             ]),
         borderRadius: BorderRadius.circular(15),
         border: Border.all(
             color: isCompleted
                 ? const Color(0xFFD4AF37)
-                : const Color(0xFF4CAF50).withOpacity(0.5),
+                : const Color(0xFF4CAF50).withValues(alpha: 0.5),
             width: isCompleted ? 2 : 1),
       ),
       child: Column(
@@ -303,7 +303,7 @@ class _MujarrabatDuasScreenState extends State<MujarrabatDuasScreen> {
               Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                      color: const Color(0xFF4CAF50).withOpacity(0.3),
+                      color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(10)),
                   child: const Text('ﷺ',
                       style: TextStyle(fontSize: 20, color: Colors.white))),
@@ -321,7 +321,7 @@ class _MujarrabatDuasScreenState extends State<MujarrabatDuasScreen> {
                 decoration: BoxDecoration(
                     color: isCompleted
                         ? const Color(0xFF4CAF50)
-                        : const Color(0xFF4CAF50).withOpacity(0.3),
+                        : const Color(0xFF4CAF50).withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(15)),
                 child: Text(
                     isCompleted ? '✓ تم' : '$currentCount / $targetCount',
@@ -349,7 +349,7 @@ class _MujarrabatDuasScreenState extends State<MujarrabatDuasScreen> {
                 style: TextStyle(
                     fontFamily: 'Amiri',
                     fontSize: 12,
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                     fontStyle: FontStyle.italic)),
           const SizedBox(height: 12),
           if (!isCompleted)
@@ -370,7 +370,7 @@ class _MujarrabatDuasScreenState extends State<MujarrabatDuasScreen> {
                       borderRadius: BorderRadius.circular(25),
                       boxShadow: [
                         BoxShadow(
-                            color: const Color(0xFF4CAF50).withOpacity(0.4),
+                            color: const Color(0xFF4CAF50).withValues(alpha: 0.4),
                             blurRadius: 10,
                             offset: const Offset(0, 3))
                       ]),
@@ -395,13 +395,13 @@ class _MujarrabatDuasScreenState extends State<MujarrabatDuasScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isCompleted
-            ? const Color(0xFFD4AF37).withOpacity(0.15)
-            : Colors.white.withOpacity(0.1),
+            ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
+            : Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(15),
         border: Border.all(
             color: isCompleted
                 ? const Color(0xFFD4AF37)
-                : Colors.white.withOpacity(0.2),
+                : Colors.white.withValues(alpha: 0.2),
             width: isCompleted ? 2 : 1),
       ),
       child: Column(
@@ -424,11 +424,11 @@ class _MujarrabatDuasScreenState extends State<MujarrabatDuasScreen> {
                 decoration: BoxDecoration(
                     color: isCompleted
                         ? const Color(0xFF4CAF50)
-                        : categoryColor.withOpacity(0.3),
+                        : categoryColor.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(15)),
                 child: Text(
                     isCompleted ? '✓ تم' : '$currentCount / $targetCount',
-                    style: TextStyle(
+                    style: const TextStyle(
                         fontFamily: 'Amiri',
                         fontSize: 13,
                         color: Colors.white,
@@ -451,10 +451,10 @@ class _MujarrabatDuasScreenState extends State<MujarrabatDuasScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                  color: const Color(0xFFD4AF37).withOpacity(0.1),
+                  color: const Color(0xFFD4AF37).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                      color: const Color(0xFFD4AF37).withOpacity(0.3))),
+                      color: const Color(0xFFD4AF37).withValues(alpha: 0.3))),
               child: Row(
                 children: [
                   const Icon(Icons.auto_awesome,
@@ -486,12 +486,12 @@ class _MujarrabatDuasScreenState extends State<MujarrabatDuasScreen> {
                   decoration: BoxDecoration(
                       gradient: LinearGradient(colors: [
                         categoryColor,
-                        categoryColor.withOpacity(0.7)
+                        categoryColor.withValues(alpha: 0.7)
                       ]),
                       borderRadius: BorderRadius.circular(25),
                       boxShadow: [
                         BoxShadow(
-                            color: categoryColor.withOpacity(0.4),
+                            color: categoryColor.withValues(alpha: 0.4),
                             blurRadius: 10,
                             offset: const Offset(0, 3))
                       ]),

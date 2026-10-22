@@ -5,7 +5,7 @@ import 'surah_detail_screen.dart';
 import 'mujarrabat_duas_screen.dart';
 
 class MujarrabatScreen extends StatelessWidget {
-  const MujarrabatScreen({Key? key}) : super(key: key);
+  const MujarrabatScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +27,17 @@ class MujarrabatScreen extends StatelessWidget {
           icon: const Icon(Icons.arrow_back_ios, color: Color(0xFFD4AF37)),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.home_rounded,
+              color: Color(0xFFD4AF37),
+            ),
+            onPressed: () => Navigator.of(context).popUntil(
+              (route) => route.isFirst,
+            ),
+          ),
+        ],
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -78,7 +89,7 @@ class MujarrabatScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.3),
+                  color: color.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -147,13 +158,13 @@ class MujarrabatScreen extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                color.withOpacity(0.2),
-                color.withOpacity(0.1),
+                color.withValues(alpha: 0.2),
+                color.withValues(alpha: 0.1),
               ],
             ),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: color.withOpacity(0.5),
+              color: color.withValues(alpha: 0.5),
               width: 2,
             ),
           ),
@@ -193,7 +204,7 @@ class MujarrabatScreen extends StatelessWidget {
                         style: TextStyle(
                           fontFamily: 'Amiri',
                           fontSize: 13,
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                         ),
                       ),
                   ],
@@ -201,7 +212,7 @@ class MujarrabatScreen extends StatelessWidget {
               ),
               Icon(
                 Icons.arrow_forward_ios,
-                color: color.withOpacity(0.6),
+                color: color.withValues(alpha: 0.6),
                 size: 20,
               ),
             ],
@@ -226,7 +237,7 @@ class MujarrabatScreen extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => MujarrabatDuasScreen(),
+              builder: (_) => const MujarrabatDuasScreen(),
             ),
           );
         },
@@ -235,13 +246,13 @@ class MujarrabatScreen extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                color.withOpacity(0.2),
-                color.withOpacity(0.1),
+                color.withValues(alpha: 0.2),
+                color.withValues(alpha: 0.1),
               ],
             ),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: color.withOpacity(0.5),
+              color: color.withValues(alpha: 0.5),
               width: 2,
             ),
           ),
@@ -283,7 +294,7 @@ class MujarrabatScreen extends StatelessWidget {
                         style: TextStyle(
                           fontFamily: 'Amiri',
                           fontSize: 13,
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                         ),
                       )
                     else if (count != null)
@@ -292,7 +303,7 @@ class MujarrabatScreen extends StatelessWidget {
                         style: TextStyle(
                           fontFamily: 'Amiri',
                           fontSize: 14,
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                         ),
                       )
                     else
@@ -309,7 +320,7 @@ class MujarrabatScreen extends StatelessWidget {
               ),
               Icon(
                 Icons.arrow_forward_ios,
-                color: color.withOpacity(0.6),
+                color: color.withValues(alpha: 0.6),
                 size: 20,
               ),
             ],

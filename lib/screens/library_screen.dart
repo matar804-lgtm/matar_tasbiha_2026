@@ -6,7 +6,7 @@ import 'ruqyah_screen.dart';
 import 'mafateh_screen.dart';
 
 class LibraryScreen extends StatelessWidget {
-  const LibraryScreen({Key? key}) : super(key: key);
+  const LibraryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
