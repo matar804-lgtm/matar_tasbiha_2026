@@ -39,9 +39,6 @@ class SurahRevelationService {
     if (surahNumber < 1 || surahNumber > 114) {
       return SurahRevelationStatus.disputed;
     }
-    if (_disputed.contains(surahNumber)) {
-      return SurahRevelationStatus.disputed;
-    }
     if (_medinan.contains(surahNumber)) {
       return SurahRevelationStatus.medinan;
     }
