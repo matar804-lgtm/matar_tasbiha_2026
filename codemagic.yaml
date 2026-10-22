@@ -41,6 +41,7 @@ workflows:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
 
+
   tasbiha-ios-unsigned:
     name: Tasbiha iOS - Unsigned IPA for Free Sideloading
     max_build_duration: 120
@@ -65,15 +66,14 @@ workflows:
       - name: Build unsigned iOS app
         script: |
           set -e
-          BUILD_NAME="$(sed -n 's/^version: \\([^+]*\\)+.*/\\1/p' pubspec.yaml)"
-          BUILD_NUMBER="$(sed -n 's/^version: .*+\\([0-9][0-9]*\\).*/\\1/p' pubspec.yaml)"
-          if [ -z "$BUILD_NAME" ] || [ -z "$BUILD_NUMBER" ]; then
+          VERSION_LINE="$(grep '^version:' pubspec.yaml | head -n 1 | cut -d ' ' -f 2)"
+          BUILD_NAME="${VERSION_LINE%%+*}"
+          BUILD_NUMBER="${VERSION_LINE##*+}"
+          if [ -z "$BUILD_NAME" ] || [ -z "$BUILD_NUMBER" ] || [ "$BUILD_NAME" = "$BUILD_NUMBER" ]; then
             echo "Could not read app version from pubspec.yaml"
             exit 1
           fi
-          flutter build ios --release --no-codesign \\
-            --build-name="$BUILD_NAME" \\
-            --build-number="$BUILD_NUMBER"
+          flutter build ios --release --no-codesign --build-name="$BUILD_NAME" --build-number="$BUILD_NUMBER"
 
       - name: Package unsigned IPA for AltStore
         script: |
@@ -81,8 +81,9 @@ workflows:
           mkdir -p build/ios/ipa/Payload
           test -d build/ios/iphoneos/Runner.app
           cp -R build/ios/iphoneos/Runner.app build/ios/ipa/Payload/Runner.app
-          BUILD_NAME="$(sed -n 's/^version: \\([^+]*\\)+.*/\\1/p' pubspec.yaml)"
-          BUILD_NUMBER="$(sed -n 's/^version: .*+\\([0-9][0-9]*\\).*/\\1/p' pubspec.yaml)"
+          VERSION_LINE="$(grep '^version:' pubspec.yaml | head -n 1 | cut -d ' ' -f 2)"
+          BUILD_NAME="${VERSION_LINE%%+*}"
+          BUILD_NUMBER="${VERSION_LINE##*+}"
           IPA_NAME="Tasbiha-$BUILD_NAME-build$BUILD_NUMBER-unsigned.ipa"
           cd build/ios/ipa
           /usr/bin/zip -qry "$IPA_NAME" Payload
