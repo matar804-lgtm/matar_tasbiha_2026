@@ -1,6 +1,9 @@
 enum SurahRevelationStatus { meccan, medinan, disputed }
 
 class SurahRevelationService {
+  // Classification transcribed from the published surah index at Quranpedia,
+  // which lists all 114 surahs as either Makki or Madani.
+  // Keep the change limited to revelation-place information only.
   static const Set<int> _medinan = <int>{
     2,
     3,
@@ -8,35 +11,28 @@ class SurahRevelationService {
     5,
     8,
     9,
+    13,
+    22,
     24,
     33,
     47,
     48,
     49,
+    55,
     57,
     58,
     59,
     60,
+    61,
     62,
     63,
+    64,
     65,
     66,
-    110,
-  };
-
-  static const Set<int> _disputed = <int>{
-    1,
-    13,
-    55,
-    61,
-    64,
-    83,
-    97,
+    76,
     98,
     99,
-    112,
-    113,
-    114,
+    110,
   };
 
   static SurahRevelationStatus classify(int surahNumber) {
