@@ -1353,7 +1353,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildInfoItem(
                 Icons.code_rounded,
                 'الإصدار',
-                '1.5.5',
+                '1.5.6',
               ),
               _buildInfoItem(
                 Icons.calendar_today_rounded,
