@@ -337,7 +337,7 @@ class PrayerNotificationService {
                 params,
               );
 
-        await _schedulePrayer(
+        await _schedulePrayerSafely(
           prayer: Prayer.fajr,
           time: prayerTimes.fajr,
           dayOffset: dayOffset,
@@ -346,7 +346,7 @@ class PrayerNotificationService {
           enableAdhan: enableAdhan,
         );
 
-        await _schedulePrayer(
+        await _schedulePrayerSafely(
           prayer: Prayer.dhuhr,
           time: prayerTimes.dhuhr,
           dayOffset: dayOffset,
@@ -355,7 +355,7 @@ class PrayerNotificationService {
           enableAdhan: enableAdhan,
         );
 
-        await _schedulePrayer(
+        await _schedulePrayerSafely(
           prayer: Prayer.asr,
           time: prayerTimes.asr,
           dayOffset: dayOffset,
@@ -364,7 +364,7 @@ class PrayerNotificationService {
           enableAdhan: enableAdhan,
         );
 
-        await _schedulePrayer(
+        await _schedulePrayerSafely(
           prayer: Prayer.maghrib,
           time: prayerTimes.maghrib,
           dayOffset: dayOffset,
@@ -373,7 +373,7 @@ class PrayerNotificationService {
           enableAdhan: enableAdhan,
         );
 
-        await _schedulePrayer(
+        await _schedulePrayerSafely(
           prayer: Prayer.isha,
           time: prayerTimes.isha,
           dayOffset: dayOffset,
@@ -391,6 +391,32 @@ class PrayerNotificationService {
       print('✅ تم جدولة مواقيت الصلاة بنجاح');
     } catch (e, stackTrace) {
       print('❌ خطأ في جدولة الصلاة: $e');
+      print(stackTrace);
+    }
+  }
+
+  // ============================================================
+  // حماية الجدولة: فشل صلاة واحدة لا يمنع جدولة الصلوات الأخرى.
+  // ============================================================
+  static Future<void> _schedulePrayerSafely({
+    required Prayer prayer,
+    required DateTime? time,
+    required int dayOffset,
+    required int prayerIndex,
+    required String selectedSoundId,
+    required bool enableAdhan,
+  }) async {
+    try {
+      await _schedulePrayer(
+        prayer: prayer,
+        time: time,
+        dayOffset: dayOffset,
+        prayerIndex: prayerIndex,
+        selectedSoundId: selectedSoundId,
+        enableAdhan: enableAdhan,
+      );
+    } catch (e, stackTrace) {
+      print('❌ تعذر جدولة تنبيه صلاة ${_getPrayerName(prayer)}: $e');
       print(stackTrace);
     }
   }
@@ -445,19 +471,30 @@ class PrayerNotificationService {
     final String rawSound = _getRawSoundName(selectedSoundId);
     final String channelId = '$_soundChannelPrefix$rawSound';
 
-    await _createSoundChannel(
-      channelId: channelId,
-      rawSound: rawSound,
-    );
+    try {
+      await _createSoundChannel(
+        channelId: channelId,
+        rawSound: rawSound,
+      );
 
-    await _scheduleAdhanNotification(
-      id: notificationId,
-      prayerName: prayerName,
-      scheduledDate: prayerTime,
-      channelId: channelId,
-      rawSound: rawSound,
-      isTakbeer: false,
-    );
+      await _scheduleAdhanNotification(
+        id: notificationId,
+        prayerName: prayerName,
+        scheduledDate: prayerTime,
+        channelId: channelId,
+        rawSound: rawSound,
+        isTakbeer: false,
+      );
+    } catch (e, stackTrace) {
+      // إن تعذر صوت الأذان، لا نفقد إشعار وقت الصلاة نفسه.
+      print('⚠️ تعذر جدولة صوت الأذان لصلاة $prayerName: $e');
+      print(stackTrace);
+      await _scheduleNoticeNotification(
+        id: notificationId,
+        prayerName: prayerName,
+        scheduledDate: prayerTime,
+      );
+    }
   }
 
   // ============================================================
