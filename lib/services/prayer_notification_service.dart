@@ -28,7 +28,6 @@ class PrayerNotificationService {
 
   static const int _notificationBaseId = 3000;
 
-  static const Duration _adhanDelay = Duration(seconds: 3);
 
   static const int _daysToSchedule = 3;
 
@@ -649,7 +648,7 @@ class PrayerNotificationService {
       sound: RawResourceAndroidNotificationSound(
         rawSound,
       ),
-      enableVibration: false,
+      enableVibration: true,
       showBadge: true,
     );
 
